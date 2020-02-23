@@ -337,8 +337,9 @@ class Visitor extends XPathBaseVisitor<Object>{
         return (List<Node>)visit(ctx.rp());
     }
     @Override public List<Node> visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) {
-        List<Node> result = new ArrayList<>();
+
         List<Node> temp = (List<Node>) visit(ctx.xq(0));
+        List<Node> result = new ArrayList<>(temp);
         Deque<Node> queue = new ArrayDeque<>(temp);
         //store all the ele and root
         while(!queue.isEmpty()){
@@ -352,7 +353,8 @@ class Visitor extends XPathBaseVisitor<Object>{
             }
         }
         curNodes = result;
-        return (List<Node>) visit(ctx.rp());
+        visit(ctx.rp());
+        return curNodes;
     }
     @Override public List<Node> visitXqConstructor(XPathParser.XqConstructorContext ctx) {
         List<Node> result = new ArrayList<>();

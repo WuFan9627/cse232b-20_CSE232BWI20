@@ -72,7 +72,7 @@ public class UserTest  {
         ParseTree tree = parser.xq();
         Visitor vi = new Visitor();  //
         List<Node> list = (List<Node>)vi.visit(tree);
-        System.out.println("The size of the result is " + list.size());
+        //System.out.println("The size of the result is " + list.size());
 
         Iterator iterator = list.iterator();
 
