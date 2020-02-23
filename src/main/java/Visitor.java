@@ -17,7 +17,7 @@ class Visitor extends XPathBaseVisitor<Object>{
     List<Node> curNodes = new ArrayList<>();
     Map<String, List<Node>> globalVar = new HashMap<>();
     Document docNode = null;
-    Document docText = null;
+    Document textNode = null;
     //text and attribute
     //only store ducu and element
     public LinkedList<Node> getChildren(Node n){
@@ -39,16 +39,13 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         return result;
     }
-    public Node makeText(String s){
-        Node result = docText.createTextNode(s);
-        return result;
-    }
+
     public Visitor(){
         try {
             DocumentBuilderFactory docBF = DocumentBuilderFactory.newInstance();
             DocumentBuilder docB = docBF.newDocumentBuilder();
             docNode = docB.newDocument();
-            docText = docB.newDocument();
+            textNode = docB.newDocument();
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         }
@@ -325,11 +322,11 @@ class Visitor extends XPathBaseVisitor<Object>{
     }
     @Override public List<Node> visitStringConst(XPathParser.StringConstContext ctx){
         String textName = ctx.StringConstant().getText().substring(1, ctx.StringConstant().getText().length()-1);
-        Document docNode = null;
-        Text textNode = docNode.createTextNode(textName);
+        Text textEle = textNode.createTextNode(textName);
         List<Node> result = new ArrayList<>();
-        result.add(textNode);
-        return result;
+        result.add(textEle);
+        curNodes = result;
+        return curNodes;
     }
     @Override public List<Node> visitXqwithP(XPathParser.XqwithPContext ctx) {
         return (List<Node>) visit(ctx.xq());
@@ -371,6 +368,7 @@ class Visitor extends XPathBaseVisitor<Object>{
 //        Document docN = builder.newDocument();
         String tag = ctx.NAME(0).getText();
         result.add(makeElem(tag, xqRes));
+        curNodes = result;
         return result;
     }
 
@@ -432,14 +430,15 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         flwrHelper(ctx, 0, result, forResult);
         globalVar = new HashMap<>(oldContext);
+        curNodes = result;
         return result;
     }
 
     @Override public List<Node> visitReturnClause(XPathParser.ReturnClauseContext ctx) {
         return (List<Node>) visit(ctx.xq());
     }
-    @Override public List<Node> visitWhereClause(XPathParser.WhereClauseContext ctx) {
-        return (List<Node>) visit(ctx.cond());
+    @Override public Boolean visitWhereClause(XPathParser.WhereClauseContext ctx) {
+        return (Boolean) visit(ctx.cond());
     }
     @Override public List<Node> visitLetClause(XPathParser.LetClauseContext ctx){
         for (int i = 0; i < ctx.var().size(); i++) {
@@ -504,7 +503,7 @@ class Visitor extends XPathBaseVisitor<Object>{
 
     @Override
     public Boolean visitXqEmpty(XPathParser.XqEmptyContext ctx){
-        ArrayList<Node> xqResult = (ArrayList<Node>)visit(ctx.xq());
+        List<Node> xqResult = (List<Node>)visit(ctx.xq());
         if(xqResult.isEmpty()){
             return true;
         }
@@ -518,9 +517,11 @@ class Visitor extends XPathBaseVisitor<Object>{
 
     @Override
     public Boolean visitXqSome(XPathParser.XqSomeContext ctx){
+        Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
         for (int i = 0; i < ctx.var().size(); i++) {
-            globalVar.put(ctx.var(i).getText(), (ArrayList<Node>)visit(ctx.xq(i)));
+            globalVar.put(ctx.var(i).getText(), (List<Node>)visit(ctx.xq(i)));
         }
+        globalVar = new HashMap<>(oldContext);
         return (Boolean)visit(ctx.cond());
     }
 
