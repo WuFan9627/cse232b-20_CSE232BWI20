@@ -18,6 +18,7 @@ class Visitor extends XPathBaseVisitor<Object>{
     Map<String, List<Node>> globalVar = new HashMap<>();
     Document docNode = null;
     Document textNode = null;
+    Node documentNode = null;
     //text and attribute
     //only store ducu and element
     public LinkedList<Node> getChildren(Node n){
@@ -66,6 +67,7 @@ class Visitor extends XPathBaseVisitor<Object>{
             if (doc != null) {
                 doc.getDocumentElement().normalize();
             }
+            documentNode = doc;
             curNodes.add(doc);
             return doc;
         }
@@ -84,10 +86,15 @@ class Visitor extends XPathBaseVisitor<Object>{
     @Override public List<Node> visitApGoTODescent(XPathParser.ApGoTODescentContext ctx){
         visit(ctx.fileName());
         List<Node> children = new ArrayList<>();
-        Node root = curNodes.get(0);
+
         Deque<Node> queue = new ArrayDeque<>();
-        queue.offerFirst(root);
-        children.add(root);
+        if(documentNode!=null){
+            queue.offerFirst(documentNode);
+            children.add(documentNode);
+        }
+
+
+
         //store all the ele and root
         while(!queue.isEmpty()){
             Node cur = queue.pollLast();
@@ -401,7 +408,7 @@ class Visitor extends XPathBaseVisitor<Object>{
             if (ctx.whereClause() ==null || ctx.whereClause() != null && (Boolean)visit(ctx.whereClause())) {
                 List<Node> c = (List<Node>) visit(ctx.returnClause());
                 if (c != null) {
-                    res.addAll((List<Node>) visit(ctx.returnClause()));
+                    res.addAll(c);
                 }
             }
             globalVar = oldContext;
@@ -409,8 +416,10 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         else{
             String var = ctx.forClause().var(level).getText();
-            List<Node> varNodes = (List<Node>) visit(forResult.get(ctx.forClause().var(level).getText()));
-            for (Node n : varNodes){
+            XPathParser.XqContext  xqCon= forResult.get(ctx.forClause().var(level).getText());
+            List<Node> varNodes = (List<Node>) visit(xqCon);
+            for (int i = 0;i<varNodes.size();i++){
+                Node n = varNodes.get(i);
                 List<Node> nList = new ArrayList<>();
                 nList.add(n);
                 globalVar.put(var, nList);
@@ -521,10 +530,11 @@ class Visitor extends XPathBaseVisitor<Object>{
     public Boolean visitXqSome(XPathParser.XqSomeContext ctx){
         Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
         for (int i = 0; i < ctx.var().size(); i++) {
-            globalVar.put(ctx.var(i).getText(), (List<Node>)visit(ctx.xq(i)));
+            globalVar.put(ctx.var(i).getText(),(List<Node>)visit(ctx.xq(i)));
         }
+        Boolean r = (Boolean)visit(ctx.cond());
         globalVar = new HashMap<>(oldContext);
-        return (Boolean)visit(ctx.cond());
+        return r;
     }
 
 

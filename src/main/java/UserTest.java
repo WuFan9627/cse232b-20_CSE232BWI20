@@ -1,32 +1,28 @@
 import java.io.*;
-import java.nio.file.NoSuchFileException;
 import java.util.*;
 import java.util.Iterator;
 import java.util.List;
-
-
-import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+
+import org.w3c.dom.NodeList;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
-
-import javax.swing.*;
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
+
 
 public class UserTest  {
-    public static void main(String[] args) throws IOException, TransformerException {
+    public static void main(String[] args) throws IOException, TransformerException, ParserConfigurationException {
 //        Scanner input = new Scanner(System.in);
 //        System.out.print("Enter query file name : ");
 //        String file = input.next();
@@ -64,7 +60,6 @@ public class UserTest  {
 
 
 
-
         CharStream stream = CharStreams.fromStream(in);
         XPathLexer lexer = new XPathLexer(stream);
         CommonTokenStream cts = new CommonTokenStream(lexer);
@@ -72,41 +67,69 @@ public class UserTest  {
         ParseTree tree = parser.xq();
         Visitor vi = new Visitor();  //
         List<Node> list = (List<Node>)vi.visit(tree);
-        //System.out.println("The size of the result is " + list.size());
+        System.out.println("The size of the result is " + list.size());
 
         Iterator iterator = list.iterator();
 
         while(iterator.hasNext()){
             Node node = (Node)iterator.next();
-            System.out.println(formatXml(toString(node)));
+           printNode(node,"");
 
         }
 
 
 
     }
-    private static String toString(Node node) throws IOException, TransformerException
-    {
-        DOMImplementationLS lsImpl = (DOMImplementationLS)node.getOwnerDocument().getImplementation().getFeature("LS", "3.0");
-        LSSerializer serializer = lsImpl.createLSSerializer();
-        serializer.setNewLine("\n");
-        serializer.getDomConfig().setParameter("xml-declaration", false);
-        String str = serializer.writeToString(node);
-        return str;
-    }
-    public static String formatXml(String xml){
-        try{
-            Transformer serializer= SAXTransformerFactory.newInstance().newTransformer();
-            serializer.setOutputProperty(OutputKeys.INDENT, "yes");
-            serializer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-            Source xmlSource=new SAXSource(new InputSource(new ByteArrayInputStream(xml.getBytes())));
-            StreamResult res =  new StreamResult(new ByteArrayOutputStream());
-            serializer.transform(xmlSource, res);
-            return new String(((ByteArrayOutputStream)res.getOutputStream()).toByteArray());
-        }catch(Exception e){
-            return xml;
+    private static void printNode(Node node, String tab) {
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            System.out.println(tab + "<" + node.getNodeName() + ">");
+            NamedNodeMap nodeMap = node.getAttributes();
+            if (nodeMap != null) {
+                for (int i = 0; i < nodeMap.getLength(); i++) {
+                    printNode(nodeMap.item(i), tab + "  ");
+                }
+            }
+            NodeList nodeList = node.getChildNodes();
+            if (nodeList != null) {
+                for (int i = 0; i < nodeList.getLength(); i++) {
+                    printNode(nodeList.item(i), tab + "  ");
+                }
+            }
+            System.out.println(tab + "<" + node.getNodeName() + "/>");
+
+        } else if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
+            System.out.println(tab + "<@" + node.getNodeName() + "=" + node.getNodeValue() + ">");
+        } else if (node.getNodeType() == Node.TEXT_NODE) {
+            System.out.println(tab + node.getTextContent());
+        } else if (node.getNodeType() == Node.DOCUMENT_NODE) {
+            System.out.println("DOCUMENT_NODE");
         }
     }
+
+//    private static String toString(Node node) throws IOException, TransformerException
+//    {
+//        DOMImplementationLS lsImpl = (DOMImplementationLS)node.getOwnerDocument().getImplementation().getFeature("LS", "3.0");
+//        LSSerializer serializer = lsImpl.createLSSerializer();
+//        serializer.setNewLine("\n");
+//        serializer.getDomConfig().setParameter("xml-declaration", false);
+//        String str = serializer.writeToString(node);
+//        return str;
+//
+//    }
+//    public static String formatXml(String xml){
+//        try{
+//            Transformer serializer= SAXTransformerFactory.newInstance().newTransformer();
+//            serializer.setOutputProperty(OutputKeys.INDENT, "yes");
+//            serializer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+//            serializer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "0");
+//            Source xmlSource=new SAXSource(new InputSource(new ByteArrayInputStream(xml.getBytes())));
+//            StreamResult res =  new StreamResult(new ByteArrayOutputStream());
+//            serializer.transform(xmlSource, res);
+//            return new String(((ByteArrayOutputStream)res.getOutputStream()).toByteArray());
+//        }catch(Exception e){
+//            return xml;
+//        }
+//    }
 
 
 }
