@@ -191,19 +191,19 @@ public interface XPathVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStringConst(XPathParser.StringConstContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code XqRpDoubleSlash}
+	 * labeled alternative in {@link XPathParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code XqwithP}
 	 * labeled alternative in {@link XPathParser#xq}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitXqwithP(XPathParser.XqwithPContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code XqRpDoubldSlash}
-	 * labeled alternative in {@link XPathParser#xq}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitXqRpDoubldSlash(XPathParser.XqRpDoubldSlashContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code XqRpSingleSlash}
 	 * labeled alternative in {@link XPathParser#xq}.

@@ -317,6 +317,18 @@ public interface XPathListener extends ParseTreeListener {
 	 */
 	void exitStringConst(XPathParser.StringConstContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code XqRpDoubleSlash}
+	 * labeled alternative in {@link XPathParser#xq}.
+	 * @param ctx the parse tree
+	 */
+	void enterXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code XqRpDoubleSlash}
+	 * labeled alternative in {@link XPathParser#xq}.
+	 * @param ctx the parse tree
+	 */
+	void exitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code XqwithP}
 	 * labeled alternative in {@link XPathParser#xq}.
 	 * @param ctx the parse tree
@@ -328,18 +340,6 @@ public interface XPathListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitXqwithP(XPathParser.XqwithPContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code XqRpDoubldSlash}
-	 * labeled alternative in {@link XPathParser#xq}.
-	 * @param ctx the parse tree
-	 */
-	void enterXqRpDoubldSlash(XPathParser.XqRpDoubldSlashContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code XqRpDoubldSlash}
-	 * labeled alternative in {@link XPathParser#xq}.
-	 * @param ctx the parse tree
-	 */
-	void exitXqRpDoubldSlash(XPathParser.XqRpDoubldSlashContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code XqRpSingleSlash}
 	 * labeled alternative in {@link XPathParser#xq}.

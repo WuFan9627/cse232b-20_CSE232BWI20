@@ -198,14 +198,14 @@ public class XPathBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements 
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitXqwithP(XPathParser.XqwithPContext ctx) { return visitChildren(ctx); }
+	@Override public T visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitXqRpDoubldSlash(XPathParser.XqRpDoubldSlashContext ctx) { return visitChildren(ctx); }
+	@Override public T visitXqwithP(XPathParser.XqwithPContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

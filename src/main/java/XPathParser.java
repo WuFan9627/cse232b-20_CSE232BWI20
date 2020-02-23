@@ -1079,6 +1079,28 @@ public class XPathParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
+	public static class XqRpDoubleSlashContext extends XqContext {
+		public XqContext xq(int i) {
+			return getRuleContext(XqContext.class,0);
+		}
+		public RpContext rp() {
+			return getRuleContext(RpContext.class,0);
+		}
+		public XqRpDoubleSlashContext(XqContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof XPathListener ) ((XPathListener)listener).enterXqRpDoubleSlash(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof XPathListener ) ((XPathListener)listener).exitXqRpDoubleSlash(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof XPathVisitor ) return ((XPathVisitor<? extends T>)visitor).visitXqRpDoubleSlash(this);
+			else return visitor.visitChildren(this);
+		}
+	}
 	public static class XqwithPContext extends XqContext {
 		public XqContext xq() {
 			return getRuleContext(XqContext.class,0);
@@ -1095,28 +1117,6 @@ public class XPathParser extends Parser {
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof XPathVisitor ) return ((XPathVisitor<? extends T>)visitor).visitXqwithP(this);
-			else return visitor.visitChildren(this);
-		}
-	}
-	public static class XqRpDoubldSlashContext extends XqContext {
-		public XqContext xq() {
-			return getRuleContext(XqContext.class,0);
-		}
-		public RpContext rp() {
-			return getRuleContext(RpContext.class,0);
-		}
-		public XqRpDoubldSlashContext(XqContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof XPathListener ) ((XPathListener)listener).enterXqRpDoubldSlash(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof XPathListener ) ((XPathListener)listener).exitXqRpDoubldSlash(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof XPathVisitor ) return ((XPathVisitor<? extends T>)visitor).visitXqRpDoubldSlash(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1357,7 +1357,7 @@ public class XPathParser extends Parser {
 						break;
 					case 3:
 						{
-						_localctx = new XqRpDoubldSlashContext(new XqContext(_parentctx, _parentState));
+						_localctx = new XqRpDoubleSlashContext(new XqContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_xq);
 						setState(148);
 						if (!(precpred(_ctx, 4))) throw new FailedPredicateException(this, "precpred(_ctx, 4)");

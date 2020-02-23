@@ -45,7 +45,7 @@ xq
 	| '(' xq ')'												# XqwithP
 	| xq ',' xq 											    # TwoXqConcat
 	| xq '/' rp													# XqRpSingleSlash
-	| xq '//' rp 												# XqRpDoubldSlash
+	| xq '//' rp 												# XqRpDoubleSlash
 	| '<' NAME '>' '{' xq '}' '<' '/' NAME '>'					# XqConstructor
 	| forClause letClause? whereClause? returnClause    		# FLWR
 	| letClause xq 												# XqLet

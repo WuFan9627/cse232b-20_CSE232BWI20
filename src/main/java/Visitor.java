@@ -1,8 +1,10 @@
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.lang.annotation.ElementType;
 import java.util.*;
@@ -14,6 +16,8 @@ import java.nio.file.Paths;
 class Visitor extends XPathBaseVisitor<Object>{
     List<Node> curNodes = new ArrayList<>();
     Map<String, List<Node>> globalVar = new HashMap<>();
+    Document docNode = null;
+    Document docText = null;
     //text and attribute
     //only store ducu and element
     public LinkedList<Node> getChildren(Node n){
@@ -24,19 +28,31 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         return nodes;
     }
-    public void putNodeToContext(Node n, Map<String, List<Node>> myContext){
-        String nodeName = n.getNodeName();
-        List<Node> value = myContext.get(nodeName);
-        if(value==null){
-            List<Node> temp = new ArrayList<>();
-            temp.add(n);
-            myContext.put(nodeName,temp);
+
+    public Node makeElem(String tag, List<Node> list){
+        Node result = docNode.createElement(tag);
+        for (Node node : list) {
+            if (node != null) {
+                Node newNode = docNode.importNode(node, true);
+                result.appendChild(newNode);
+            }
         }
-        else{
-            value.add(n);
-            myContext.put(nodeName,value);
+        return result;
+    }
+    public Node makeText(String s){
+        Node result = docText.createTextNode(s);
+        return result;
+    }
+    public Visitor(){
+        try {
+            DocumentBuilderFactory docBF = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docB = docBF.newDocumentBuilder();
+            docNode = docB.newDocument();
+            docText = docB.newDocument();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
         }
-        return;
+
     }
 
     @Override public Document visitFileName(XPathParser.FileNameContext ctx){
@@ -308,7 +324,6 @@ class Visitor extends XPathBaseVisitor<Object>{
         return (List<Node>) visit(ctx.ap());
     }
     @Override public List<Node> visitStringConst(XPathParser.StringConstContext ctx){
-
         String textName = ctx.StringConstant().getText().substring(1, ctx.StringConstant().getText().length()-1);
         Document docNode = null;
         Text textNode = docNode.createTextNode(textName);
@@ -316,39 +331,110 @@ class Visitor extends XPathBaseVisitor<Object>{
         result.add(textNode);
         return result;
     }
-//    @Override public List<Node> visitXqConstructor(XPathParser.XqConstructorContext ctx) {
-//
-//    }
+    @Override public List<Node> visitXqwithP(XPathParser.XqwithPContext ctx) {
+        return (List<Node>) visit(ctx.xq());
+    }
+
+    @Override public List<Node> visitXqRpSingleSlash(XPathParser.XqRpSingleSlashContext ctx) {
+        curNodes = (List<Node>) visit(ctx.xq());
+        return (List<Node>)visit(ctx.rp());
+    }
+    @Override public List<Node> visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) {
+        List<Node> result = new ArrayList<>();
+        List<Node> temp = (List<Node>) visit(ctx.xq(0));
+        Deque<Node> queue = new ArrayDeque<>(temp);
+        //store all the ele and root
+        while(!queue.isEmpty()){
+            Node cur = queue.pollLast();
+            List<Node> nxt = getChildren(cur);
+            for(Node n: nxt){
+                if(n.getNodeType()== Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE){
+                    queue.offerFirst(n);
+                    result.add(n);
+                }
+            }
+        }
+        curNodes = result;
+        return (List<Node>) visit(ctx.rp());
+    }
+    @Override public List<Node> visitXqConstructor(XPathParser.XqConstructorContext ctx) {
+        List<Node> result = new ArrayList<>();
+        List<Node> xqRes = (List<Node>)visit(ctx.xq());
+        //create doc
+//        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+//        DocumentBuilder builder = null;
+//        try {
+//            builder = dbf.newDocumentBuilder();
+//        } catch (ParserConfigurationException e) {
+//            e.printStackTrace();
+//        }
+//        Document docN = builder.newDocument();
+        String tag = ctx.NAME(0).getText();
+        result.add(makeElem(tag, xqRes));
+        return result;
+    }
+
     @Override public List<Node> visitVariable(XPathParser.VariableContext ctx) {
         return globalVar.get(ctx.getText());
     }
-    @Override public List<Node> visitTwoXqConcat(XPathParser.TwoXqConcatContext ctx) {
-        Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
+    @Override public List<Node> visitTwoXqConcat(XPathParser.TwoXqConcatContext ctx){
         List<Node> temp = new ArrayList<>(curNodes);
         List<Node> rpOne = (List<Node>) visit(ctx.xq(0));
         curNodes = temp;
-        globalVar = oldContext;
         List<Node> rpTwo = (List<Node>) visit(ctx.xq(1));
         rpOne.addAll(rpTwo);
-        globalVar = oldContext;
         curNodes = rpOne;
         return rpOne;
     }
+
     @Override
-    public List<Node> visitForClause(XPathParser.ForClauseContext ctx) {
-        Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
-        Map<String, List<Node>> localContext = new HashMap<>(globalVar);
-        List<Node> result = (List<Node>) visit((ParseTree) ctx.xq());
-        List<Node> temp = new ArrayList<>();
-        for(Node n: result){
-            //bind var with value & put to context
-            putNodeToContext(n,localContext);
-            temp.addAll((List<Node>)visit((ParseTree) ctx.xq()));
-        }
-        curNodes = temp;
-        globalVar = new HashMap<>(oldContext);
-        return temp;
+    public List<Node> visitForClause(XPathParser.ForClauseContext ctx){
+        return null;
     }
+    public void flwrHelper(XPathParser.FLWRContext ctx, int level, List<Node> res, Map<String, XPathParser.XqContext> forResult){
+        //base case
+        if(level==ctx.forClause().var().size()){
+            Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
+            if (ctx.letClause() != null) {
+                visit(ctx.letClause());
+            }
+            if (ctx.whereClause() ==null || ctx.whereClause() != null && (Boolean)visit(ctx.whereClause())) {
+                List<Node> c = (List<Node>) visit(ctx.returnClause());
+                if (c != null) {
+                    res.addAll((List<Node>) visit(ctx.returnClause()));
+                }
+            }
+            globalVar = oldContext;
+            return;
+        }
+        else{
+            String var = ctx.forClause().var(level).getText();
+            List<Node> varNodes = (List<Node>) visit(forResult.get(ctx.forClause().var(level).getText()));
+            for (Node n : varNodes){
+                List<Node> nList = new ArrayList<>();
+                nList.add(n);
+                globalVar.put(var, nList);
+                flwrHelper(ctx, level + 1, res,forResult);
+            }
+
+        }
+    }
+
+    @Override public List<Node> visitFLWR(XPathParser.FLWRContext ctx){
+        List<Node> result = new ArrayList<>();
+        HashMap<String, List<Node>> oldContext = new HashMap<>(globalVar);
+        Map<String, XPathParser.XqContext> forResult = new HashMap<>();
+        int size = ctx.forClause().var().size();
+        for(int i = 0;i<size;i++){
+            XPathParser.VarContext var = ctx.forClause().var(i);
+            XPathParser.XqContext xq = ctx.forClause().xq(i);
+            forResult.put(var.getText(),xq);
+        }
+        flwrHelper(ctx, 0, result, forResult);
+        globalVar = new HashMap<>(oldContext);
+        return result;
+    }
+
     @Override public List<Node> visitReturnClause(XPathParser.ReturnClauseContext ctx) {
         return (List<Node>) visit(ctx.xq());
     }
@@ -356,11 +442,9 @@ class Visitor extends XPathBaseVisitor<Object>{
         return (List<Node>) visit(ctx.cond());
     }
     @Override public List<Node> visitLetClause(XPathParser.LetClauseContext ctx){
-        Map<String, List<Node>> localContext = new HashMap<>(globalVar);
         for (int i = 0; i < ctx.var().size(); i++) {
-            localContext.put(ctx.var(i).getText(), (List<Node>)visit(ctx.xq(i)));
+            globalVar.put(ctx.var(i).getText(), (List<Node>)visit(ctx.xq(i)));
         }
-        globalVar = new HashMap<>(localContext);
         return null;
     }
 

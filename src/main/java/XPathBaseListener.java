@@ -327,6 +327,18 @@ public class XPathBaseListener implements XPathListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterXqwithP(XPathParser.XqwithPContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -334,18 +346,6 @@ public class XPathBaseListener implements XPathListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitXqwithP(XPathParser.XqwithPContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterXqRpDoubldSlash(XPathParser.XqRpDoubldSlashContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitXqRpDoubldSlash(XPathParser.XqRpDoubldSlashContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
