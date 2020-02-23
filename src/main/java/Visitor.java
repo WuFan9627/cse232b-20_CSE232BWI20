@@ -448,5 +448,81 @@ class Visitor extends XPathBaseVisitor<Object>{
         return null;
     }
 
+    @Override public Boolean visitXqEqual(XPathParser.XqEqualContext ctx){
+        List<Node> temp = new ArrayList<>(curNodes);
+        List<Node> rpOne = (List<Node>) visit(ctx.xq(0));
+        curNodes = temp;
+        List<Node> rpTwo = (List<Node>) visit(ctx.xq(1));
+        curNodes = temp;
+        for (Node i : rpOne) {
+            for (Node j : rpTwo) {
+                if (i.isEqualNode(j)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean visitXqIs(XPathParser.XqIsContext ctx) {
+        List<Node> temp = new ArrayList<>(curNodes);
+        List<Node> rpOne = (List<Node>) visit(ctx.xq(0));
+        curNodes = temp;
+        List<Node> rpTwo = (List<Node>) visit(ctx.xq(1));
+        curNodes = temp;
+        for (Node i : rpOne) {
+            for (Node j : rpTwo) {
+                if (i.isSameNode(j)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean visitXqCondOr(XPathParser.XqCondOrContext ctx) {
+        List<Node> temp = new ArrayList<>(curNodes);
+        Boolean l = (Boolean)visit(ctx.cond(0));
+        curNodes = temp;
+        Boolean r = (Boolean)visit(ctx.cond(1));
+        return l||r;
+    }
+
+    @Override
+    public Boolean visitXqCondNot(XPathParser.XqCondNotContext ctx) {
+        return !(Boolean)visit(ctx.cond());
+    }
+
+    @Override
+    public Boolean visitXqCondAnd(XPathParser.XqCondAndContext ctx) {
+        Boolean l = (Boolean) visit(ctx.cond(0));//cur = {ABC,ABC,AB,ABB}
+        Boolean r = (Boolean) visit(ctx.cond(1));
+        return l&&r;
+    }
+
+    @Override
+    public Boolean visitXqEmpty(XPathParser.XqEmptyContext ctx){
+        ArrayList<Node> xqResult = (ArrayList<Node>)visit(ctx.xq());
+        if(xqResult.isEmpty()){
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean visitXqCondwithP(XPathParser.XqCondwithPContext ctx){
+        return (Boolean)visit(ctx.cond());
+    }
+
+    @Override
+    public Boolean visitXqSome(XPathParser.XqSomeContext ctx){
+        for (int i = 0; i < ctx.var().size(); i++) {
+            globalVar.put(ctx.var(i).getText(), (ArrayList<Node>)visit(ctx.xq(i)));
+        }
+        return (Boolean)visit(ctx.cond());
+    }
+
 
 }
