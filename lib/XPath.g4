@@ -49,6 +49,7 @@ xq
 	| '<' NAME '>' '{' xq '}' '<' '/' NAME '>'					# XqConstructor
 	| forClause letClause? whereClause? returnClause    		# FLWR
 	| letClause xq 												# XqLet
+	| joinClause                                                # XqJoin
 	;
 
 forClause
@@ -67,6 +68,9 @@ returnClause
 	: 'return' xq
 	;
 
+joinClause
+    : 'join' '(' xq ',' xq ',' attrNames ',' attrNames ')' ;
+
 cond
 	: xq '=' xq 											 # XqEqual
 	| xq 'eq' xq 											 # XqEqual
@@ -81,4 +85,5 @@ cond
 	;
 
 var : '$' NAME;
+attrNames: '[' NAME (',' NAME)* ']';
 StringConstant: '"'+[a-zA-Z0-9,.!?; '"-]+'"';
