@@ -69,7 +69,7 @@ returnClause
 	;
 
 joinClause
-    : 'join' '(' xq ',' xq ',' attrNames ',' attrNames ')' ;
+    : 'join' '(' xq ',' xq ',' names ',' names ')' ;
 
 cond
 	: xq '=' xq 											 # XqEqual
@@ -85,5 +85,5 @@ cond
 	;
 
 var : '$' NAME;
-attrNames: '[' NAME (',' NAME)* ']';
+names: '[' NAME (',' NAME)* ']';
 StringConstant: '"'+[a-zA-Z0-9,.!?; '"-]+'"';

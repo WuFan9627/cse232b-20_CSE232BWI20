@@ -345,7 +345,8 @@ class Visitor extends XPathBaseVisitor<Object>{
     }
     @Override public List<Node> visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) {
 
-        List<Node> temp = (List<Node>) visit(ctx.xq(0));
+       // List<Node> temp = (List<Node>) visit(ctx.xq(0));
+        List<Node> temp = (List<Node>) visit(ctx.xq());
         List<Node> result = new ArrayList<>(temp);
         Deque<Node> queue = new ArrayDeque<>(temp);
         //store all the ele and root
@@ -458,6 +459,92 @@ class Visitor extends XPathBaseVisitor<Object>{
         return null;
     }
 
+    @Override public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) { return (List<Node>)visit(ctx.joinClause()); }
+
+    @Override public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
+        List<Node> temp = new ArrayList<>(curNodes);
+        List<Node> left = (List<Node>)visit(ctx.xq(0));
+        curNodes = temp;
+        List<Node> right = (List<Node>)visit(ctx.xq(1));
+        List<String> lAttrs = new ArrayList<>();
+        for(TerminalNode n : ctx.names(0).NAME()){
+            lAttrs.add(n.getText());
+        }
+        List<String> rAttrs = new ArrayList<>();
+        for(TerminalNode n :ctx.names(1).NAME()){
+            rAttrs.add(n.getText());
+        }
+
+        //Todo: one attrs is empty
+
+        //for leftTuple : get Key and store in the hashMap
+        Map<String, List<Node>> map = new HashMap<>();
+
+        for(Node l : left){
+            String key = getKey(l, lAttrs);
+            map.putIfAbsent(key, new ArrayList<>());
+            map.get(key).add(l);
+        }
+
+        List<Node> res = new ArrayList<>();
+        for(Node r : right){
+            String str = getKey(r, rAttrs);
+            if(map.containsKey(str)){
+                for(Node l: map.get(str)){
+                    List<Node> join = new LinkedList<>();
+                    join.addAll(getChildren(l));
+                    join.addAll(getChildren(r));
+                    res.add(makeElem(l.getNodeName(), join));
+                  /** Node node = docNode.createElement("tuple");
+                  * List<Node> child = getChildren(l);
+                  * child.addAll(getChildren(r));
+                  * for(Node n : child){
+                  *     node.appendChild(docNode.importNode(n,true));
+                  * }
+                  * res.add(node);
+                   **/
+                }
+            }
+        }
+        this.curNodes = res;
+        return res;
+    }
+
+    private String getKey(Node n, List<String> attrs) {
+        Element result = docNode.createElement("result");
+        for(String s : attrs){
+            NodeList children = n.getChildNodes();
+            for(int i = 0; i < children.getLength(); i++){
+                if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(s)){
+                   // Element root = docNode.createElement("root");
+                    NodeList child = children.item(i).getChildNodes();
+                    for(int j = 0; j < child.getLength(); j++){
+                        //root.appendChild(docNode.importNode(child.item(j), true));
+                        //result.appendChild(child.item(j));
+                        result.appendChild(docNode.importNode(child.item(j), true));
+                    }
+                }
+                break;
+            }
+        }
+        return nodeToStr(result);
+    }
+
+    private String nodeToStr(Node n) {
+        StringBuilder sb = new StringBuilder();
+        NodeList nl = n.getChildNodes();
+        if(nl.getLength() == 0){
+            return sb.toString();
+        }else{
+            sb.append(n.getNodeName()).append(n.getTextContent());
+            for(int i = 0; i < nl.getLength(); i++){
+                sb.append(nodeToStr(nl.item(i)));
+            }
+            return sb.toString();
+        }
+    }
+
+
     @Override public Boolean visitXqEqual(XPathParser.XqEqualContext ctx){
         List<Node> temp = new ArrayList<>(curNodes);
         List<Node> rpOne = (List<Node>) visit(ctx.xq(0));
@@ -536,6 +623,9 @@ class Visitor extends XPathBaseVisitor<Object>{
         globalVar = new HashMap<>(oldContext);
         return r;
     }
+
+    @Override
+    public List<Node> visitNames(XPathParser.NamesContext ctx) { return null; }
 
 
 }

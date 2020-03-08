@@ -317,6 +317,18 @@ public interface XPathListener extends ParseTreeListener {
 	 */
 	void exitStringConst(XPathParser.StringConstContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code XqJoin}
+	 * labeled alternative in {@link XPathParser#xq}.
+	 * @param ctx the parse tree
+	 */
+	void enterXqJoin(XPathParser.XqJoinContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code XqJoin}
+	 * labeled alternative in {@link XPathParser#xq}.
+	 * @param ctx the parse tree
+	 */
+	void exitXqJoin(XPathParser.XqJoinContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code XqRpDoubleSlash}
 	 * labeled alternative in {@link XPathParser#xq}.
 	 * @param ctx the parse tree
@@ -416,6 +428,16 @@ public interface XPathListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitReturnClause(XPathParser.ReturnClauseContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link XPathParser#joinClause}.
+	 * @param ctx the parse tree
+	 */
+	void enterJoinClause(XPathParser.JoinClauseContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XPathParser#joinClause}.
+	 * @param ctx the parse tree
+	 */
+	void exitJoinClause(XPathParser.JoinClauseContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code XqEqual}
 	 * labeled alternative in {@link XPathParser#cond}.
@@ -522,4 +544,14 @@ public interface XPathListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitVar(XPathParser.VarContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link XPathParser#names}.
+	 * @param ctx the parse tree
+	 */
+	void enterNames(XPathParser.NamesContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XPathParser#names}.
+	 * @param ctx the parse tree
+	 */
+	void exitNames(XPathParser.NamesContext ctx);
 }
