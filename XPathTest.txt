@@ -1,8 +1,14 @@
 for $a in doc("small.xml")//ACT,
     $b in doc("small.xml")//ACT,
     $c in doc("small.xml")//ACT,
+    $d in doc("small.xml")//ACT,
         $sa in $a//SCENE,
         $sb in $b//SCENE,
-        $sc in $c//SCENE
-where $sa eq $sb and $sa eq $sc and $sb eq $sc
+        $sc in $c//SCENE,
+        $sd in $d//SCENE,
+        $spa in $sa//SPEAKER,
+        $spb in $sb//SPEAKER/text(),
+        $spc in $sc//SPEAKER,
+        $spd in $sd//SPEAKER
+where $spb="FLAVIUS" and $sc eq $sb and $sa eq $sd and $spa eq $spc
 return <result>{ <title>{$sa/TITLE/text()}</title> }</result>
