@@ -345,7 +345,7 @@ class Visitor extends XPathBaseVisitor<Object>{
     }
     @Override public List<Node> visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) {
 
-       // List<Node> temp = (List<Node>) visit(ctx.xq(0));
+        //List<Node> temp = (List<Node>) visit(ctx.xq(0));
         List<Node> temp = (List<Node>) visit(ctx.xq());
         List<Node> result = new ArrayList<>(temp);
         Deque<Node> queue = new ArrayDeque<>(temp);
@@ -462,6 +462,7 @@ class Visitor extends XPathBaseVisitor<Object>{
     @Override public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) { return (List<Node>)visit(ctx.joinClause()); }
 
     @Override public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
+        List<Node> res = new ArrayList<>();
         List<Node> temp = new ArrayList<>(curNodes);
         List<Node> left = (List<Node>)visit(ctx.xq(0));
         curNodes = temp;
@@ -475,7 +476,10 @@ class Visitor extends XPathBaseVisitor<Object>{
             rAttrs.add(n.getText());
         }
 
-        //Todo: one attrs is empty
+        //one attrs is empty
+        if(lAttrs.isEmpty() || rAttrs.isEmpty()){
+            return res;
+        }
 
         //for leftTuple : get Key and store in the hashMap
         Map<String, List<Node>> map = new HashMap<>();
@@ -486,7 +490,6 @@ class Visitor extends XPathBaseVisitor<Object>{
             map.get(key).add(l);
         }
 
-        List<Node> res = new ArrayList<>();
         for(Node r : right){
             String str = getKey(r, rAttrs);
             if(map.containsKey(str)){
@@ -510,6 +513,7 @@ class Visitor extends XPathBaseVisitor<Object>{
         return res;
     }
 
+    /**
     private String getKey(Node n, List<String> attrs) {
         Element result = docNode.createElement("result");
         for(String s : attrs){
@@ -529,7 +533,23 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         return nodeToStr(result);
     }
+     **/
 
+    private String getKey(Node n, List<String> attrs){
+        StringBuilder sb = new StringBuilder();
+        for(String s : attrs){
+            NodeList children = n.getChildNodes();
+            for(int i = 0; i < children.getLength(); i++){
+                if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(s)){
+                    sb.append(children.item(i).getTextContent());
+                }
+                break;
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
     private String nodeToStr(Node n) {
         StringBuilder sb = new StringBuilder();
         NodeList nl = n.getChildNodes();
@@ -543,7 +563,7 @@ class Visitor extends XPathBaseVisitor<Object>{
             return sb.toString();
         }
     }
-
+**/
 
     @Override public Boolean visitXqEqual(XPathParser.XqEqualContext ctx){
         List<Node> temp = new ArrayList<>(curNodes);
