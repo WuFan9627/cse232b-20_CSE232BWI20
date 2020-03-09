@@ -1,6 +1,8 @@
-for $s in doc("j_caesar.xml")//SPEAKER
-return <speaks>{<who>{$s/text()}</who>,
-                for $a in doc("j_caesar.xml")//ACT
-                where some $s1 in $a//SPEAKER satisfies $s1 eq $s
-                return <when>{$a/TITLE/text()}</when>}
-       </speaks>
+for $a in doc("small.xml")//ACT,
+    $b in doc("small.xml")//ACT,
+    $c in doc("small.xml")//ACT,
+        $sa in $a//SCENE,
+        $sb in $b//SCENE,
+        $sc in $c//SCENE
+where $sa eq $sb and $sa eq $sc and $sb eq $sc
+return <result>{ <title>{$sa/TITLE/text()}</title> }</result>

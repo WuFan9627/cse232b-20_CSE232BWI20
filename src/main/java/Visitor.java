@@ -194,12 +194,6 @@ class Visitor extends XPathBaseVisitor<Object>{
     @Override public List<Node> visitRpGoToDescent(XPathParser.RpGoToDescentContext ctx){
         List<Node> rpOne = (List<Node>) visit(ctx.rp(0));
         List<Node> children = new ArrayList<>(rpOne);
-        // for(Node curNode: rpOne){
-        // 	children.addAll(getChildren(curNode));
-        // }
-        // curNodes = children;
-        // return visit(ctx.rp(1));
-
         Deque<Node> queue = new ArrayDeque<>(rpOne);
         //store all the ele and root
         while(!queue.isEmpty()){
@@ -298,6 +292,7 @@ class Visitor extends XPathBaseVisitor<Object>{
         curNodes = temp;
         List<Node> rpTwo = (List<Node>) visit(ctx.rp(1));
         curNodes = temp;
+        if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
         for (Node i : rpOne) {
             for (Node j : rpTwo) {
                 if (i.isEqualNode(j)) {
@@ -315,6 +310,7 @@ class Visitor extends XPathBaseVisitor<Object>{
         curNodes = temp;
         List<Node> rpTwo = (List<Node>) visit(ctx.rp(1));
         curNodes = temp;
+        if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
         for (Node i : rpOne) {
             for (Node j : rpTwo) {
                 if (i.isSameNode(j)) {
@@ -464,6 +460,7 @@ class Visitor extends XPathBaseVisitor<Object>{
         curNodes = temp;
         List<Node> rpTwo = (List<Node>) visit(ctx.xq(1));
         curNodes = temp;
+        if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
         for (Node i : rpOne) {
             for (Node j : rpTwo) {
                 if (i.isEqualNode(j)) {
@@ -481,6 +478,7 @@ class Visitor extends XPathBaseVisitor<Object>{
         curNodes = temp;
         List<Node> rpTwo = (List<Node>) visit(ctx.xq(1));
         curNodes = temp;
+        if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
         for (Node i : rpOne) {
             for (Node j : rpTwo) {
                 if (i.isSameNode(j)) {
@@ -528,14 +526,45 @@ class Visitor extends XPathBaseVisitor<Object>{
 
     @Override
     public Boolean visitXqSome(XPathParser.XqSomeContext ctx){
+//        Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
+//        for (int i = 0; i < ctx.var().size(); i++) {
+//            globalVar.put(ctx.var(i).getText(),(List<Node>)visit(ctx.xq(i)));
+//        }
+//        Boolean r = (Boolean)visit(ctx.cond());
+//        globalVar = new HashMap<>(oldContext);
+//        return r;
         Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
-        for (int i = 0; i < ctx.var().size(); i++) {
-            globalVar.put(ctx.var(i).getText(),(List<Node>)visit(ctx.xq(i)));
-        }
-        Boolean r = (Boolean)visit(ctx.cond());
+        Boolean r = someHelper(ctx,0);
         globalVar = new HashMap<>(oldContext);
         return r;
+
     }
+    public Boolean someHelper(XPathParser.XqSomeContext ctx, int level){
+        //base case
+        if(level==ctx.var().size()){
+            Boolean r = (Boolean) visit(ctx.cond());
+            return r;
+        }
+        else{
+            String var = ctx.var(level).getText();
+            List<Node> varNodes = (List<Node>) visit(ctx.xq(level));
+            for (int i = 0;i<varNodes.size();i++){
+                Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
+                Node n = varNodes.get(i);
+                List<Node> nList = new ArrayList<>();
+                nList.add(n);
+                globalVar.put(var, nList);
+                Boolean t = someHelper(ctx, level + 1);
+                globalVar = new HashMap<>(oldContext);
+                if(t){
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
+
 
 
 }

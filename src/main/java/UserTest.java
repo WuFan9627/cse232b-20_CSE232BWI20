@@ -2,6 +2,8 @@ import java.io.*;
 import java.util.*;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -58,25 +60,26 @@ public class UserTest  {
 //        frame.pack();
 //        frame.setVisible(true);
 
-
-
-        CharStream stream = CharStreams.fromStream(in);
-        XPathLexer lexer = new XPathLexer(stream);
-        CommonTokenStream cts = new CommonTokenStream(lexer);
-        XPathParser parser = new XPathParser(cts);
-        ParseTree tree = parser.xq();
-        Visitor vi = new Visitor();  //
-        List<Node> list = (List<Node>)vi.visit(tree);
-        System.out.println("The size of the result is " + list.size());
-
-        Iterator iterator = list.iterator();
-
-        while(iterator.hasNext()){
-            Node node = (Node)iterator.next();
-           printNode(node,"");
-
-        }
-
+//below is the main code
+//        CharStream stream = CharStreams.fromStream(in);
+//        XPathLexer lexer = new XPathLexer(stream);
+//        CommonTokenStream cts = new CommonTokenStream(lexer);
+//        XPathParser parser = new XPathParser(cts);
+//        ParseTree tree = parser.xq();
+//        Visitor vi = new Visitor();  //
+//        List<Node> list = (List<Node>)vi.visit(tree);
+//        System.out.println("The size of the result is " + list.size());
+//
+//        Iterator iterator = list.iterator();
+//
+//        while(iterator.hasNext()){
+//            Node node = (Node)iterator.next();
+//           printNode(node,"");
+//
+//        }
+//rewrite
+        reWriteVisitor rw = new reWriteVisitor();
+        System.out.println(rw.reWrite(in));
 
 
     }
