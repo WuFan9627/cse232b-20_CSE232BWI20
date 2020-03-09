@@ -1,47 +1,46 @@
 for $tuple0 in join (
 join (
-for $b1 in doc("book.xml")/book,
-$aj in $b1/author/first/text(),
-$a1 in $b1/author,
-$af1 in $a1/first,
-$al1 in $a1/last
-where $aj="Darcy"
-return <tuple0>
-{<b1>{$b1}</b1>,
-<aj>{$aj}</aj>,
-<a1>{$a1}</a1>,
-<af1>{$af1}</af1>,
-<al1>{$al1}</al1>}
-</tuple0>,
-for $b2 in doc("book.xml")/book,
+for $b2 in doc("book.xml")//book,
 $a21 in $b2/author,
 $a22 in $b2/author,
 $af21 in $a21/first,
 $al21 in $a21/last,
 $af22 in $a22/first,
 $al22 in $a22/last
-return <tuple0>
-{<b2>{$b2}</b2>,
+return <tuple0>{
+<b2>{$b2}</b2>,
 <a21>{$a21}</a21>,
 <a22>{$a22}</a22>,
 <af21>{$af21}</af21>,
 <al21>{$al21}</al21>,
 <af22>{$af22}</af22>,
-<al22>{$al22}</al22>}
-</tuple0>,
-[af1,al1],[af21,al21]
-),
-for $b3 in doc("book.xml")/book,
+<al22>{$al22}</al22>
+}</tuple0>,
+for $b3 in doc("book.xml")//book,
 $a3 in $b3/author,
 $af3 in $a3/first,
 $al3 in $a3/last
-return <tuple0>
-{<b3>{$b3}</b3>,
+return <tuple0>{
+<b3>{$b3}</b3>,
 <a3>{$a3}</a3>,
 <af3>{$af3}</af3>,
-<al3>{$al3}</al3>}
-</tuple0>,
+<al3>{$al3}</al3>
+}</tuple0>,
 [af22,al22],[af3,al3]
+),
+for $b1 in doc("book.xml")//book,
+$aj in $b1/author/first/text(),
+$a1 in $b1/author,
+$af1 in $a1/first,
+$al1 in $a1/last
+where $aj="W."
+return <tuple0>{
+<b1>{$b1}</b1>,
+<aj>{$aj}</aj>,
+<a1>{$a1}</a1>,
+<af1>{$af1}</af1>,
+<al1>{$al1}</al1>
+}</tuple0>,
+[af21,al21],[af1,al1]
 )
 return<triplet>{$tuple0/b1/*,$tuple0/b2/*,$tuple0/b3/*}</triplet>
-

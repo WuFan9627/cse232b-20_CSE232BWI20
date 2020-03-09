@@ -482,58 +482,52 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
 
         //for leftTuple : get Key and store in the hashMap
-        Map<String, List<Node>> map = new HashMap<>();
+        Map<Key, List<Node>> map = new HashMap<>();
 
         for(Node l : left){
-            String key = getKey(l, lAttrs);
-            map.putIfAbsent(key, new ArrayList<>());
-            map.get(key).add(l);
-        }
-
-        for(Node r : right){
-            String str = getKey(r, rAttrs);
-            if(map.containsKey(str)){
-                for(Node l: map.get(str)){
-                    List<Node> join = new LinkedList<>();
-                    join.addAll(getChildren(l));
-                    join.addAll(getChildren(r));
-                    res.add(makeElem(l.getNodeName(), join));
-                  /** Node node = docNode.createElement("tuple");
-                  * List<Node> child = getChildren(l);
-                  * child.addAll(getChildren(r));
-                  * for(Node n : child){
-                  *     node.appendChild(docNode.importNode(n,true));
-                  * }
-                  * res.add(node);
-                   **/
+            Key k = new Key();
+            NodeList children = l.getChildNodes();
+            for(String ls : lAttrs){
+                for(int i = 0; i < children.getLength(); i++){
+                    if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(ls)) {
+                        k.keyNodes.add(children.item(i));
+                        break;
+                    }
                 }
             }
+            map.putIfAbsent(k, new ArrayList<>());
+            map.get(k).add(l);
         }
+        System.out.println(map.size());
+
+        for(Node r : right){
+            Key k = new Key();
+            NodeList children = r.getChildNodes();
+            for(String rs : rAttrs){
+                for(int i = 0; i < children.getLength(); i++){
+                    if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(rs)) {
+                        k.keyNodes.add(children.item(i));
+                        break;
+                    }
+                }
+
+                if(map.containsKey(k)){
+                    for(Node l : map.get(k)){
+                        List<Node> join = new LinkedList<>();
+                        join.addAll(getChildren(l));
+                        join.addAll(getChildren(r));
+                        res.add(makeElem(l.getNodeName(), join));
+                    }
+                }
+            }
+
+        }
+
         this.curNodes = res;
         return res;
     }
 
-    /**
-    private String getKey(Node n, List<String> attrs) {
-        Element result = docNode.createElement("result");
-        for(String s : attrs){
-            NodeList children = n.getChildNodes();
-            for(int i = 0; i < children.getLength(); i++){
-                if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(s)){
-                   // Element root = docNode.createElement("root");
-                    NodeList child = children.item(i).getChildNodes();
-                    for(int j = 0; j < child.getLength(); j++){
-                        //root.appendChild(docNode.importNode(child.item(j), true));
-                        //result.appendChild(child.item(j));
-                        result.appendChild(docNode.importNode(child.item(j), true));
-                    }
-                }
-                break;
-            }
-        }
-        return nodeToStr(result);
-    }
-     **/
+
 
     private String getKey(Node n, List<String> attrs){
         StringBuilder sb = new StringBuilder();
@@ -541,7 +535,8 @@ class Visitor extends XPathBaseVisitor<Object>{
             NodeList children = n.getChildNodes();
             for(int i = 0; i < children.getLength(); i++){
                 if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(s)){
-                    sb.append(children.item(i).getTextContent());
+                    //sb.append(children.item(i).getTextContent());
+                    sb.append(children.item(i).hashCode());
                 }
                 break;
             }
@@ -549,21 +544,7 @@ class Visitor extends XPathBaseVisitor<Object>{
         return sb.toString();
     }
 
-    /**
-    private String nodeToStr(Node n) {
-        StringBuilder sb = new StringBuilder();
-        NodeList nl = n.getChildNodes();
-        if(nl.getLength() == 0){
-            return sb.toString();
-        }else{
-            sb.append(n.getNodeName()).append(n.getTextContent());
-            for(int i = 0; i < nl.getLength(); i++){
-                sb.append(nodeToStr(nl.item(i)));
-            }
-            return sb.toString();
-        }
-    }
-**/
+
 
     @Override public Boolean visitXqEqual(XPathParser.XqEqualContext ctx){
         List<Node> temp = new ArrayList<>(curNodes);
