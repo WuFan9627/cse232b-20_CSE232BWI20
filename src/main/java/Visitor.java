@@ -341,7 +341,8 @@ class Visitor extends XPathBaseVisitor<Object>{
     }
     @Override public List<Node> visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) {
 
-        List<Node> temp = (List<Node>) visit(ctx.xq(0));
+        //List<Node> temp = (List<Node>) visit(ctx.xq(0));
+        List<Node> temp = (List<Node>) visit(ctx.xq());
         List<Node> result = new ArrayList<>(temp);
         Deque<Node> queue = new ArrayDeque<>(temp);
         //store all the ele and root
@@ -444,6 +445,93 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         return null;
     }
+
+    @Override public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) { return (List<Node>)visit(ctx.joinClause()); }
+
+    @Override public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
+        List<Node> res = new ArrayList<>();
+        List<Node> temp = new ArrayList<>(curNodes);
+        List<Node> left = (List<Node>)visit(ctx.xq(0));
+        curNodes = temp;
+        List<Node> right = (List<Node>)visit(ctx.xq(1));
+        List<String> lAttrs = new ArrayList<>();
+        for(TerminalNode n : ctx.names(0).NAME()){
+            lAttrs.add(n.getText());
+        }
+        List<String> rAttrs = new ArrayList<>();
+        for(TerminalNode n :ctx.names(1).NAME()){
+            rAttrs.add(n.getText());
+        }
+
+        //one attrs is empty
+        if(lAttrs.isEmpty() || rAttrs.isEmpty()){
+            return res;
+        }
+
+        //for leftTuple : get Key and store in the hashMap
+        Map<Key, List<Node>> map = new HashMap<>();
+
+        for(Node l : left){
+            Key k = new Key();
+            NodeList children = l.getChildNodes();
+            for(String ls : lAttrs){
+                for(int i = 0; i < children.getLength(); i++){
+                    if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(ls)) {
+                        k.keyNodes.add(children.item(i));
+                        break;
+                    }
+                }
+            }
+            map.putIfAbsent(k, new ArrayList<>());
+            map.get(k).add(l);
+        }
+        System.out.println(map.size());
+
+        for(Node r : right){
+            Key k = new Key();
+            NodeList children = r.getChildNodes();
+            for(String rs : rAttrs){
+                for(int i = 0; i < children.getLength(); i++){
+                    if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(rs)) {
+                        k.keyNodes.add(children.item(i));
+                        break;
+                    }
+                }
+
+                if(map.containsKey(k)){
+                    for(Node l : map.get(k)){
+                        List<Node> join = new LinkedList<>();
+                        join.addAll(getChildren(l));
+                        join.addAll(getChildren(r));
+                        res.add(makeElem(l.getNodeName(), join));
+                    }
+                }
+            }
+
+        }
+
+        this.curNodes = res;
+        return res;
+    }
+
+
+
+    private String getKey(Node n, List<String> attrs){
+        StringBuilder sb = new StringBuilder();
+        for(String s : attrs){
+            NodeList children = n.getChildNodes();
+            for(int i = 0; i < children.getLength(); i++){
+                if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(s)){
+                    //sb.append(children.item(i).getTextContent());
+                    sb.append(children.item(i).hashCode());
+                }
+                break;
+            }
+        }
+        return sb.toString();
+    }
+
+
 
     @Override public Boolean visitXqEqual(XPathParser.XqEqualContext ctx){
         List<Node> temp = new ArrayList<>(curNodes);
@@ -556,4 +644,12 @@ class Visitor extends XPathBaseVisitor<Object>{
         return false;
     }
 
+<<<<<<< HEAD
+=======
+
+    @Override
+    public List<Node> visitNames(XPathParser.NamesContext ctx) { return null; }
+
+
+>>>>>>> e88c8c03878160507eaf9b2643778a7214b3cbe1
 }
