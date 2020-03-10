@@ -1,14 +1,21 @@
-for $a in doc("small.xml")//ACT,
-    $b in doc("small.xml")//ACT,
-    $c in doc("small.xml")//ACT,
-    $d in doc("small.xml")//ACT,
-        $sa in $a//SCENE,
-        $sb in $b//SCENE,
-        $sc in $c//SCENE,
-        $sd in $d//SCENE,
-        $spa in $sa//SPEAKER,
-        $spb in $sb//SPEAKER/text(),
-        $spc in $sc//SPEAKER,
-        $spd in $sd//SPEAKER
-where $spb="FLAVIUS" and $sc eq $sb and $sa eq $sd and $spa eq $spc
-return <result>{ <title>{$sa/TITLE/text()}</title> }</result>
+for $b1 in doc("books.xml")//book,
+    $aj in $b1/author/first/text(),
+    $a1 in $b1/author,
+    $af1 in $a1/first/text(),
+    $al1 in $a1/last/text(),
+    $al23333 in $a1/last/text(),
+
+    $b2 in doc("books.xml")//book,
+    $a21 in $b2/author,
+    $af21 in $a21/first/text(),
+    $al21 in $a21/last/text(),
+    $a22 in $b2/author,
+    $af22 in $a22/first/text(),
+    $al22 in $a22/last/text(),
+
+    $b3 in doc("books.xml")//book,
+    $a3 in $b3/author,
+    $af3 in $a3/first/text(),
+    $al3 in $a3/last/text()
+where "W." = $aj and $aj eq $aj and $af21 eq $af1 and $al1 eq $al21 and $af22 eq $af3 and $al22 eq $al3 and $al1 = $al23333
+return <triplet> { $b1/title, $b2/@year, $b3/author} </triplet>

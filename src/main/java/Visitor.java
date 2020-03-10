@@ -362,15 +362,6 @@ class Visitor extends XPathBaseVisitor<Object>{
     @Override public List<Node> visitXqConstructor(XPathParser.XqConstructorContext ctx) {
         List<Node> result = new ArrayList<>();
         List<Node> xqRes = (List<Node>)visit(ctx.xq());
-        //create doc
-//        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-//        DocumentBuilder builder = null;
-//        try {
-//            builder = dbf.newDocumentBuilder();
-//        } catch (ParserConfigurationException e) {
-//            e.printStackTrace();
-//        }
-//        Document docN = builder.newDocument();
         String tag = ctx.NAME(0).getText();
         result.add(makeElem(tag, xqRes));
         curNodes = result;
@@ -564,7 +555,5 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         return false;
     }
-
-
 
 }

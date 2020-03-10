@@ -26,10 +26,9 @@ class reWriteVisitor{
             if(res.contains(entry.getKey())) continue;
             else if(!set.contains(val1) && !set.contains(val2)) continue;
             else{
-                res.add(entry.getKey());//deduplicate
+                res.add(entry.getKey());
                 set.add(val1);
                 set.add(val2);
-
             }
         }
     }
@@ -91,7 +90,6 @@ class reWriteVisitor{
                 varToRoot.put(var,tNode);
             }
             else{
-                //TODO get the parent name
                 String parent = xq.substring(1,xq.indexOf("/"));
                 tNode.parent = parent;
                 if(varToRoot.get(parent)!=null) tNode.TreeRoot = parent;
@@ -105,7 +103,6 @@ class reWriteVisitor{
         }
         //create where: varToString and varToVar
         evalWhere(whereClauseContext.cond());
-        //TODO get result
         StringBuilder res = new StringBuilder();
         res.append("for $tuple in ").append(getResult());
         //return clause
@@ -153,16 +150,16 @@ class reWriteVisitor{
             List<String> entry = sequence.get(i);
             String tree1 = entry.get(0);
             String tree2 = entry.get(1);
+            if(tree1.equals(tree2)) continue;
             TreeNode n1 = varToNode.get(tree1)==null? varToRoot.get(tree1) : varToNode.get(tree1);
             TreeNode n2 = varToNode.get(tree2)==null? varToRoot.get(tree2) : varToNode.get(tree2);
             //both empty need flwr
             if(!visited.contains(tree1) && !visited.contains(tree2)){
-                joinAll.append("join (\n");
                 StringBuilder tree1Res = flwrRes(n1);
                 StringBuilder tree2Res = flwrRes(n2);
-                joinAll.append(tree1Res).append(", ").append(tree2Res).append(", ");
-                //TODO add eq list
-                joinAll.append(appendEQ(entry)).append(")");
+                joinAll.append("join (\n").append(tree1Res).append(", ")
+                        .append(tree2Res).append(", ")
+                        .append(appendEQ(entry)).append(")");
                 visited.add(tree1);
                 visited.add(tree2);
             }
@@ -183,108 +180,33 @@ class reWriteVisitor{
                 int idx = joinAll.toString().lastIndexOf("}</tuple>");
                 String appender =  joinAll.substring(idx+11,joinAll.toString().length()-2);
                 joinAll.delete(idx + 10,joinAll.length());
-                //appender.substring(0,appender.length()-1);
                 String[] parts = appender.split("],");
                 String part1 = parts[0].substring(1); // a1 ,a2
                 String part2 = parts[1].substring(1,parts[1].length()-1); // b1 ,b2
-                List<String> part1List = new ArrayList<String>(Arrays.asList(part1.split(",")));
-                List<String> part2List = new ArrayList<String>(Arrays.asList(part2.split(",")));
+                List<String> part1List = new ArrayList<>(Arrays.asList(part1.split(",")));
+                List<String> part2List = new ArrayList<>(Arrays.asList(part2.split(",")));
                 part1List.addAll(appendee.get(0));
                 part2List.addAll(appendee.get(1));
                 joinAll.append("[");
                 for(String s: part1List){
                     joinAll.append(s).append(",");
                 }
-                joinAll.deleteCharAt(joinAll.length()-1);
-                joinAll.append("],");
-                joinAll.append("[");
+                joinAll.deleteCharAt(joinAll.length()-1).append("],").append("[");
                 for(String s: part2List){
                     joinAll.append(s).append(",");
                 }
-                joinAll.deleteCharAt(joinAll.length()-1);
-                joinAll.append("])");
+                joinAll.deleteCharAt(joinAll.length()-1).append("])");
             }
-
-//
-//                //check tree1 is treeNum or Joined Res
-//                StringBuilder treeNumOrRes = joinedTree.containsKey(tree1)? joinedTree.get(tree1) : joinedTree.get(tree2);
-//                String emptyTree = joinedTree.containsKey(tree1)? tree2: tree1;
-//                String joinTree = joinedTree.containsKey(tree1)? tree1: tree2;
-//                if(joinedTree.containsKey(treeNumOrRes.toString())){
-//                    // it is joined before with treeNum
-//                    StringBuilder interRes = joinedTree.get(treeNumOrRes.toString());
-//                    TreeNode n = varToNode.get(emptyTree)==null? varToRoot.get(emptyTree) : varToNode.get(emptyTree);
-//                    //entry sequence
-//                    if(entry.get(0).equals(n.name)){
-//                        interRes.insert(0,",").insert(0,flwrRes(n)).insert(0,"join (\n");
-//                        joinedTree.put(treeNumOrRes.toString(),new StringBuilder(emptyTree));
-//                        joinedTree.put(emptyTree,interRes);
-//                    }
-//                    else{
-//
-//                    }
-//                    interRes.insert(0,"join (\n")
-//                            .append(",").append(flwrRes(n))
-//                            .append(appendEQ(entry)).append(")");
-//
-//                    joinedTree.put(treeNumOrRes.toString(),interRes);
-//                    joinedTree.put(emptyTree,treeNumOrRes);
-//                    joinAll = interRes.toString();
-//                }
-//                else{ // treeNumOrRes is res
-//                    treeNumOrRes.insert(0,"join (\n");
-//                    treeNumOrRes.append(flwrRes(varToNode.get(emptyTree)));
-//                    treeNumOrRes.append(appendEQ((entry))).append(")");
-//                    joinedTree.put(joinTree,treeNumOrRes);
-//                    joinedTree.put(emptyTree,new StringBuilder(joinTree));
-//                    joinAll = treeNumOrRes.toString();
-//                }
-
-//            TODO same treeNUM add eq. diff treeNUM  join won't happen
-//            else if(joinedTree.get(tree1).equals(joinedTree.get(tree2)) || joinedTree.get(tree1).toString().equals(tree2)
-//                    ||joinedTree.get(tree2).toString().equals(tree1)
-//            ){
-//                String t = joinedTree.get(tree1).toString().equals(tree2) ? tree2 : tree1;
-//                //curRes
-//                StringBuilder joinR =  joinedTree.get(t);
-//                List<List<String>> appendee = appendEQHelper(entry);
-//                int idx = joinR.toString().lastIndexOf("}</tuple>");
-//                String appender =  joinR.toString().substring(idx+11,joinR.toString().length()-2);
-//                joinR.delete(idx + 10,joinR.length());
-//                //appender.substring(0,appender.length()-1);
-//                String[] parts = appender.split("],");
-//                String part1 = parts[0].substring(1); // a1 ,a2
-//                String part2 = parts[1].substring(1,parts[1].length()-1); // b1 ,b2
-//                List<String> part1List = new ArrayList<String>(Arrays.asList(part1.split(",")));
-//                List<String> part2List = new ArrayList<String>(Arrays.asList(part2.split(",")));
-//                part1List.addAll(appendee.get(0));
-//                part2List.addAll(appendee.get(1));
-//                joinR.append("[");
-//                for(String s: part1List){
-//                    joinR.append(s).append(",");
-//                }
-//                joinR.deleteCharAt(joinR.length()-1);
-//                joinR.append("],");
-//                joinR.append("[");
-//                for(String s: part2List){
-//                    joinR.append(s).append(",");
-//                }
-//                joinR.deleteCharAt(joinR.length()-1);
-//                joinR.append("])");
-//                joinedTree.put(joinedTree.get(tree1).toString(),joinR);
-//                joinAll = joinR.toString();
-//            }
             else {
                 System.out.println("No join happen");
             }
         }
-        //TODO handel not joined flwr go to varToRoot and check if it's empty in joinedTree
+        //handel not joined flwr, go to varToRoot and check if it's in set
         for(String t : varToRoot.keySet()){
-            if(!visited.contains(t)) joinAll.append(",").append(flwrRes(varToRoot.get(t)));
+            if(!visited.contains(t)) joinAll.append(",\n").append(flwrRes(varToRoot.get(t)));
         }
         return new StringBuilder(joinAll);
     }
-
 
     public StringBuilder flwrRes(TreeNode n1){ //n1 = root
         StringBuilder sb = new StringBuilder();
@@ -316,10 +238,9 @@ class reWriteVisitor{
             for(Map.Entry<String,String> entry:rootToJoin.entrySet()){
                sb.append("$").append(entry.getKey()).append(" eq ").append(entry.getValue()).append("and");
             }
-            sb.delete(sb.length()-3,sb.length());
-            sb.append("\n");
+            sb.delete(sb.length()-3,sb.length()).append("\n");
         }
-        //add return --- need to remove , if it's the last join ?
+        //add return
         sb.append("return <tuple>{");
         for(TreeNode child: children){
             sb.append("<").append(child.name).append(">{$").append(child.name).append("}</").append(child.name).append(">,\n");
@@ -369,10 +290,6 @@ class reWriteVisitor{
                 if(!str1.startsWith("$")) varToStringEQ.put(str2.substring(1),str1);
                 else varToStringEQ.put(str1.substring(1),str2);
             }
-
         }
-
     }
-
-
 }

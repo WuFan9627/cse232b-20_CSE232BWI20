@@ -1,27 +1,15 @@
 import java.io.*;
-import java.util.*;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Pattern;
-
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-
 import org.w3c.dom.NodeList;
-import org.w3c.dom.ls.DOMImplementationLS;
-import org.w3c.dom.ls.LSSerializer;
-import org.xml.sax.InputSource;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-
 
 public class UserTest  {
     public static void main(String[] args) throws IOException, TransformerException, ParserConfigurationException {
@@ -59,9 +47,10 @@ public class UserTest  {
 //        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        frame.pack();
 //        frame.setVisible(true);
-
-//below is the main code
-//        CharStream stream = CharStreams.fromStream(in);
+        reWriteVisitor rw = new reWriteVisitor();
+        System.out.println(rw.reWrite(in));
+//        CharStream stream = CharStreams.fromString(rw.reWrite(in));
+//        //CharStream stream = CharStreams.fromStream(in);
 //        XPathLexer lexer = new XPathLexer(stream);
 //        CommonTokenStream cts = new CommonTokenStream(lexer);
 //        XPathParser parser = new XPathParser(cts);
@@ -69,19 +58,11 @@ public class UserTest  {
 //        Visitor vi = new Visitor();  //
 //        List<Node> list = (List<Node>)vi.visit(tree);
 //        System.out.println("The size of the result is " + list.size());
-//
 //        Iterator iterator = list.iterator();
-//
 //        while(iterator.hasNext()){
 //            Node node = (Node)iterator.next();
 //           printNode(node,"");
-//
 //        }
-//rewrite
-        reWriteVisitor rw = new reWriteVisitor();
-        System.out.println(rw.reWrite(in));
-
-
     }
     private static void printNode(Node node, String tab) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
@@ -104,8 +85,6 @@ public class UserTest  {
             System.out.println(tab + "<@" + node.getNodeName() + "=" + node.getNodeValue() + ">");
         } else if (node.getNodeType() == Node.TEXT_NODE) {
             System.out.println(tab + node.getTextContent());
-        } else if (node.getNodeType() == Node.DOCUMENT_NODE) {
-            System.out.println("DOCUMENT_NODE");
         }
     }
 
