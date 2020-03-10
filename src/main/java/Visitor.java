@@ -485,8 +485,6 @@ class Visitor extends XPathBaseVisitor<Object>{
             map.putIfAbsent(k, new ArrayList<>());
             map.get(k).add(l);
         }
-        System.out.println(map.size());
-
         for(Node r : right){
             Key k = new Key();
             NodeList children = r.getChildNodes();
@@ -513,24 +511,6 @@ class Visitor extends XPathBaseVisitor<Object>{
         this.curNodes = res;
         return res;
     }
-
-
-
-    private String getKey(Node n, List<String> attrs){
-        StringBuilder sb = new StringBuilder();
-        for(String s : attrs){
-            NodeList children = n.getChildNodes();
-            for(int i = 0; i < children.getLength(); i++){
-                if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(s)){
-                    //sb.append(children.item(i).getTextContent());
-                    sb.append(children.item(i).hashCode());
-                }
-                break;
-            }
-        }
-        return sb.toString();
-    }
-
 
 
     @Override public Boolean visitXqEqual(XPathParser.XqEqualContext ctx){
@@ -643,13 +623,7 @@ class Visitor extends XPathBaseVisitor<Object>{
         }
         return false;
     }
-
-<<<<<<< HEAD
-=======
-
     @Override
     public List<Node> visitNames(XPathParser.NamesContext ctx) { return null; }
 
-
->>>>>>> e88c8c03878160507eaf9b2643778a7214b3cbe1
 }

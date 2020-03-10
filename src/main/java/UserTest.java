@@ -48,21 +48,21 @@ public class UserTest  {
 //        frame.pack();
 //        frame.setVisible(true);
         reWriteVisitor rw = new reWriteVisitor();
-        System.out.println(rw.reWrite(in));
-//        CharStream stream = CharStreams.fromString(rw.reWrite(in));
-//        //CharStream stream = CharStreams.fromStream(in);
-//        XPathLexer lexer = new XPathLexer(stream);
-//        CommonTokenStream cts = new CommonTokenStream(lexer);
-//        XPathParser parser = new XPathParser(cts);
-//        ParseTree tree = parser.xq();
-//        Visitor vi = new Visitor();  //
-//        List<Node> list = (List<Node>)vi.visit(tree);
-//        System.out.println("The size of the result is " + list.size());
-//        Iterator iterator = list.iterator();
-//        while(iterator.hasNext()){
-//            Node node = (Node)iterator.next();
-//           printNode(node,"");
-//        }
+        //System.out.println(rw.reWrite(in));
+        CharStream stream = CharStreams.fromString(rw.reWrite(in));
+        //CharStream stream = CharStreams.fromStream(in);
+        XPathLexer lexer = new XPathLexer(stream);
+        CommonTokenStream cts = new CommonTokenStream(lexer);
+        XPathParser parser = new XPathParser(cts);
+        ParseTree tree = parser.xq();
+        Visitor vi = new Visitor();  //
+        List<Node> list = (List<Node>)vi.visit(tree);
+        System.out.println("The size of the result is " + list.size());
+        Iterator iterator = list.iterator();
+        while(iterator.hasNext()){
+            Node node = (Node)iterator.next();
+           printNode(node,"");
+        }
     }
     private static void printNode(Node node, String tab) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {

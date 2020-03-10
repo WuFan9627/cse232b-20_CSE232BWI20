@@ -260,10 +260,21 @@ class reWriteVisitor{
             // var to var
             if(str1.startsWith("$") && str2.startsWith("$") ){
                 str1 = str1.substring(1); str2 = str2.substring(1);
-                String str1Tree = varToNode.get(str1).TreeRoot;
-                String str2Tree = varToNode.get(str2).TreeRoot;
-                int idx1 = Integer.parseInt(varToRoot.get(str1Tree).TreeRoot);
-                int idx2 = Integer.parseInt(varToRoot.get(str2Tree).TreeRoot);
+                String str1Tree; String str2Tree; int idx1; int idx2;
+                if(varToNode.get(str1)!=null){
+                    str1Tree = varToNode.get(str1).TreeRoot;
+                }
+                else{
+                    str1Tree =str1;
+                }
+                idx1 = Integer.parseInt(varToRoot.get(str1Tree).TreeRoot);
+                if(varToNode.get(str2)!=null){
+                    str2Tree = varToNode.get(str2).TreeRoot;
+                }
+                else{
+                    str2Tree  = str2;
+                }
+                idx2 = Integer.parseInt(varToRoot.get(str2Tree).TreeRoot);
                 //swap str1 & str2, str1Tree & str2Tree
                 if(idx1 > idx2){
                     String temp = str1;
