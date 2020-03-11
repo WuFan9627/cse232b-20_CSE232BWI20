@@ -602,6 +602,76 @@ class Key {
         @Override
         public List<Node> visitNames(XPathParser.NamesContext ctx) { return null; }
 
+//        @Override public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) { return (List<Node>)visit(ctx.joinClause()); }
+//
+//        @Override public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
+//            List<Node> res = new ArrayList<>();
+//            List<Node> temp = new ArrayList<>(curNodes);
+//            List<Node> left = (List<Node>)visit(ctx.xq(0));
+//            curNodes = temp;
+//            List<Node> right = (List<Node>)visit(ctx.xq(1));
+//            List<String> lAttrs = new ArrayList<>();
+//            for(TerminalNode n : ctx.names(0).NAME()){
+//                lAttrs.add(n.getText());
+//            }
+//            List<String> rAttrs = new ArrayList<>();
+//            for(TerminalNode n :ctx.names(1).NAME()){
+//                rAttrs.add(n.getText());
+//            }
+//
+//            //one attrs is empty
+//            if(lAttrs.isEmpty() || rAttrs.isEmpty()){
+//                return res;
+//            }
+//
+//            //for leftTuple : get Key and store in the hashMap
+//            Map<String, List<Node>> map = new HashMap<>();
+//
+//            for(Node l : left){
+//                //Key k = new Key();
+//                String key = "";
+//                NodeList children = l.getChildNodes();
+//                for(int i = 0; i<lAttrs.size();i++){
+//                    String ls = lAttrs.get(i);
+//                    for(int j = 0; j < children.getLength(); j++){
+//                        if(children.item(j).getNodeType() == Node.ELEMENT_NODE && children.item(j).getNodeName().equals(ls)) {
+//                            key = key + i + children.item(j).getTextContent();
+//                            break;
+//                        }
+//                    }
+//                }
+//                map.putIfAbsent(key, new ArrayList<>());
+//                map.get(key).add(l);
+//            }
+//            for(Node r : right){
+//                String key = "";
+//                NodeList children = r.getChildNodes();
+//                for(int i = 0; i<rAttrs.size();i++){
+//                    String rs = rAttrs.get(i);
+//                    for(int j = 0; j < children.getLength(); j++){
+//                        if(children.item(j).getNodeType() == Node.ELEMENT_NODE && children.item(j).getNodeName().equals(rs)) {
+//                            key = key +i + children.item(j).getTextContent();
+//                            break;
+//                        }
+//                    }
+//                    if(map.containsKey(key)){
+//                        for(Node l : map.get(key)){
+//                            for (int j = 0; j < children.getLength(); j++) {
+//                                Node curElement = children.item(j);
+//                                Node newNode = l.getOwnerDocument().importNode(curElement, true);
+//                                l.appendChild(newNode);
+//                            }
+//                            res.add(l);
+//                        }
+//                    }
+//
+//                }
+//
+//
+//            }
+//            this.curNodes = res;
+//            return res;
+//        }
 @       Override public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) { return (List<Node>)visit(ctx.joinClause()); }
 
         @Override public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
@@ -651,14 +721,13 @@ class Key {
                             break;
                         }
                     }
-
-                    if(map.containsKey(k)){
-                        for(Node l : map.get(k)){
-                            List<Node> join = new LinkedList<>();
-                            join.addAll(getChildren(l));
-                            join.addAll(getChildren(r));
-                            res.add(makeElem(l.getNodeName(), join));
-                        }
+                }
+                if(map.containsKey(k)){
+                    for(Node l : map.get(k)){
+                        List<Node> join = new LinkedList<>();
+                        join.addAll(getChildren(l));
+                        join.addAll(getChildren(r));
+                        res.add(makeElem(l.getNodeName(), join));
                     }
                 }
 
