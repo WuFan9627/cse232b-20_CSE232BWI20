@@ -104,7 +104,9 @@ class reWriteVisitor{
         //create where: varToString and varToVar
         evalWhere(whereClauseContext.cond());
         StringBuilder res = new StringBuilder();
-        res.append("for $tuple in ").append(getResult());
+        StringBuilder getRes = getResult();
+        if(getRes==null) return null;
+        res.append("for $tuple in ").append(getRes);
         //return clause
         res.append("\n").append(returnClauseContext.getText().replaceAll("\\$([a-zA-Z0-9_]+)", "\\$tuple/$1/*"));
         return res.toString();
@@ -253,8 +255,8 @@ class reWriteVisitor{
     public void evalWhere(XPathParser.CondContext condContext){
         if (condContext.getChild(1).getText().equals("and")) {
             this.evalWhere((XPathParser.CondContext) condContext.getChild(0));
-            this.evalWhere((XPathParser.CondContext) condContext.getChild(2));
-        } else if (condContext.getChild(1).getText().equals("=") || condContext.getChild(1).getText().equals("eq")) {
+            this.evalWhere((XPathParser.CondContext) condContext.getChild(2));}
+        else if (condContext.getChild(1).getText().equals("=") || condContext.getChild(1).getText().equals("eq")) {
             String str1 = condContext.getChild(0).getText(); // af1
             String str2 = condContext.getChild(2).getText(); //af2
             // var to var

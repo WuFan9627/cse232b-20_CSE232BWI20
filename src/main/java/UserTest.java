@@ -22,8 +22,10 @@ public class UserTest  {
 //        String file = args[0];
         String file = "XPathTest.txt";
         InputStream in = System.in;
+        InputStream in2 = System.in;
         if(file != null) {
             in = new FileInputStream(file);
+            in2 = new FileInputStream(file);
         }
         //below to show the picture of xquery
 //
@@ -47,22 +49,47 @@ public class UserTest  {
 //        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        frame.pack();
 //        frame.setVisible(true);
+
+
+        //---below do the milestone3---
         reWriteVisitor rw = new reWriteVisitor();
-        //System.out.println(rw.reWrite(in));
-        CharStream stream = CharStreams.fromString(rw.reWrite(in));
-        //CharStream stream = CharStreams.fromStream(in);
-        XPathLexer lexer = new XPathLexer(stream);
-        CommonTokenStream cts = new CommonTokenStream(lexer);
-        XPathParser parser = new XPathParser(cts);
-        ParseTree tree = parser.xq();
-        Visitor vi = new Visitor();  //
-        List<Node> list = (List<Node>)vi.visit(tree);
-        System.out.println("The size of the result is " + list.size());
-        Iterator iterator = list.iterator();
-        while(iterator.hasNext()){
-            Node node = (Node)iterator.next();
-           printNode(node,"");
+        String rew = rw.reWrite(in);
+        System.out.println(rew);
+        System.out.println("----------------------");
+
+        if(rew==null){
+            System.out.println("rewrite failed");
+            CharStream stream = CharStreams.fromStream(in2);
+            XPathLexer lexer = new XPathLexer(stream);
+            CommonTokenStream cts = new CommonTokenStream(lexer);
+            XPathParser parser = new XPathParser(cts);
+            ParseTree tree = parser.xq();
+            Visitor vi = new Visitor();  //
+            List<Node> list = (List<Node>) vi.visit(tree);
+            System.out.println("The size of the result is " + list.size());
+            Iterator iterator = list.iterator();
+            while (iterator.hasNext()) {
+                Node node = (Node) iterator.next();
+                printNode(node, "");
+            }
         }
+        else {
+            CharStream stream = CharStreams.fromString(rew);
+            XPathLexer lexer = new XPathLexer(stream);
+            CommonTokenStream cts = new CommonTokenStream(lexer);
+            XPathParser parser = new XPathParser(cts);
+            ParseTree tree = parser.xq();
+            Visitor vi = new Visitor();  //
+            List<Node> list = (List<Node>) vi.visit(tree);
+            System.out.println("The size of the result is " + list.size());
+            Iterator iterator = list.iterator();
+            while (iterator.hasNext()) {
+                Node node = (Node) iterator.next();
+                printNode(node, "");
+            }
+        }
+
+
     }
     private static void printNode(Node node, String tab) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
