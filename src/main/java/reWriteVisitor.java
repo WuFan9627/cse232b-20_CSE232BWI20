@@ -205,9 +205,49 @@ class reWriteVisitor{
         }
         //handel not joined flwr, go to varToRoot and check if it's in set
         for(String t : varToRoot.keySet()){
-            if(!visited.contains(t)) joinAll.append(",\n").append(flwrRes(varToRoot.get(t)));
+            if(!visited.contains(t)) joinAll.append(",\n").append(withoutFor(varToRoot.get(t)));
         }
         return new StringBuilder(joinAll);
+    }
+    public StringBuilder withoutFor(TreeNode n1){
+        StringBuilder sb = new StringBuilder();
+        Deque<TreeNode> queue = new ArrayDeque<>();
+        List<TreeNode> children = new ArrayList<>();
+        //string const in tree
+        Map<String,String> rootToJoin = new HashMap<>();
+        children.add(n1);
+        queue.offer(n1);
+        while(!queue.isEmpty()){
+            TreeNode cur = queue.pollLast();
+            List<TreeNode> nxt = cur.children;
+            for(TreeNode n: nxt){
+                queue.offerFirst(n);
+                children.add(n);
+                if(varToStringEQ.get(n.name)!=null){
+                    rootToJoin.put(n.name,varToStringEQ.get(n.name));
+                }
+            }
+        }
+        for(TreeNode child: children){
+            sb.append("$").append(child.name).append(" in ").append(child.forXQ).append(",\n");
+        }
+        sb.deleteCharAt(sb.length()-2); //delete "," and \n
+        //add where
+        if(rootToJoin.size()!=0){
+            sb.append("where ");
+            for(Map.Entry<String,String> entry:rootToJoin.entrySet()){
+                sb.append("$").append(entry.getKey()).append(" eq ").append(entry.getValue()).append("and");
+            }
+            sb.delete(sb.length()-3,sb.length()).append("\n");
+        }
+        //add return
+        sb.append("return <tuple>{");
+        for(TreeNode child: children){
+            sb.append("<").append(child.name).append(">{$").append(child.name).append("}</").append(child.name).append(">,\n");
+        }
+        sb.deleteCharAt(sb.length()-2); //delete "," and \n
+        sb.append("}</tuple>");
+        return sb;
     }
 
     public StringBuilder flwrRes(TreeNode n1){ //n1 = root
