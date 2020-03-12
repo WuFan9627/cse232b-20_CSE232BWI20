@@ -53,7 +53,7 @@ public class UserTest  {
 
         //---below do the milestone3---
         reWriteVisitor rw = new reWriteVisitor();
-        String rew = rw.reWrite(in);
+        String rew = null;// rw.reWrite(in);
         System.out.println(rew);
         System.out.println("----------------------");
 

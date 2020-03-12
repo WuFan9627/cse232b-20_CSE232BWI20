@@ -1,63 +1,30 @@
-
-
-
- import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.w3c.dom.*;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.io.StringWriter;
 import java.util.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-class Key {
-     ArrayList<Node> keyNodes;
-
-     Key() {
-         keyNodes = new ArrayList<>();
-     }
-     @Override
-     public boolean equals(Object object){
-         if(object == this){
-             return true;
-         }
-         Key kobj = (Key)object;
-         if(keyNodes.size() != kobj.keyNodes.size()){
-             return false;
-         }
-         for(int i = 0; i < keyNodes.size(); i++){
-
-             if (!keyNodes.get(i).getFirstChild().isEqualNode(kobj.keyNodes.get(i).getFirstChild())) {
-                 return false;
-             }
-         }
-         return true;
-     }
-
-     @Override
-     public int hashCode(){
-         String s = "";
-         for(Node n : keyNodes){
-             s += n.getFirstChild().getTextContent();
-         }
-         return s.hashCode();
-     }
-
- }
-
-
-
     //update global & use returned res
-    class Visitor extends XPathBaseVisitor<Object>{
+    class Visitor extends XPathBaseVisitor<Object> {
         List<Node> curNodes = new ArrayList<>();
         Map<String, List<Node>> globalVar = new HashMap<>();
         Document docNode = null;
         Document textNode = null;
         Node documentNode = null;
+
         //text and attribute
         //only store ducu and element
-        public LinkedList<Node> getChildren(Node n){
+        public LinkedList<Node> getChildren(Node n) {
             LinkedList<Node> nodes = new LinkedList<>();
             NodeList children = n.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
@@ -66,7 +33,7 @@ class Key {
             return nodes;
         }
 
-        public Node makeElem(String tag, List<Node> list){
+        public Node makeElem(String tag, List<Node> list) {
             Node result = docNode.createElement(tag);
             for (Node node : list) {
                 if (node != null) {
@@ -77,7 +44,7 @@ class Key {
             return result;
         }
 
-        public Visitor(){
+        public Visitor() {
             try {
                 DocumentBuilderFactory docBF = DocumentBuilderFactory.newInstance();
                 DocumentBuilder docB = docBF.newDocumentBuilder();
@@ -89,8 +56,9 @@ class Key {
 
         }
 
-        @Override public Document visitFileName(XPathParser.FileNameContext ctx){
-            try{
+        @Override
+        public Document visitFileName(XPathParser.FileNameContext ctx) {
+            try {
 
                 String fileName = ctx.NAME().toString();
                 DocumentBuilderFactory docBF = DocumentBuilderFactory.newInstance();
@@ -106,34 +74,36 @@ class Key {
                 }
                 documentNode = doc;
                 return doc;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 return null;
             }
 
         }
 
-        @Override public List<Node> visitApGOToChildren(XPathParser.ApGOToChildrenContext ctx) {
+        @Override
+        public List<Node> visitApGOToChildren(XPathParser.ApGOToChildrenContext ctx) {
             //put root in curNodes
             visit(ctx.fileName());
             return (List<Node>) visit(ctx.rp());
         }
-        @Override public List<Node> visitApGoTODescent(XPathParser.ApGoTODescentContext ctx){
+
+        @Override
+        public List<Node> visitApGoTODescent(XPathParser.ApGoTODescentContext ctx) {
             visit(ctx.fileName());
             List<Node> children = new ArrayList<>();
 
             Deque<Node> queue = new ArrayDeque<>();
-            if(documentNode!=null){
+            if (documentNode != null) {
                 queue.offerFirst(documentNode);
                 //children.add(documentNode);
             }
             //store all the ele and root
-            while(!queue.isEmpty()){
+            while (!queue.isEmpty()) {
                 Node cur = queue.pollLast();
                 List<Node> nxt = getChildren(cur);
-                for(Node n: nxt){
-                    if(n.getNodeType()== Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE){//
+                for (Node n : nxt) {
+                    if (n.getNodeType() == Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE) {//
                         queue.offerFirst(n);
                         children.add(n);
                     }
@@ -143,11 +113,12 @@ class Key {
             return (List<Node>) visit(ctx.rp());
         }
 
-        @Override public List<Node> visitAllChildren(XPathParser.AllChildrenContext ctx){
+        @Override
+        public List<Node> visitAllChildren(XPathParser.AllChildrenContext ctx) {
             Set<Node> set = new HashSet<>();
-            for(Node n: curNodes){
-                NodeList children =n.getChildNodes();
-                for (int i = 0;i<children.getLength();i++) {
+            for (Node n : curNodes) {
+                NodeList children = n.getChildNodes();
+                for (int i = 0; i < children.getLength(); i++) {
                     if (children.item(i).getNodeType() == Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE) {
                         set.add(children.item(i));
                     }
@@ -158,14 +129,15 @@ class Key {
             return curNodes;
         }
 
-        @Override public List<Node> visitTagName(XPathParser.TagNameContext ctx) {
+        @Override
+        public List<Node> visitTagName(XPathParser.TagNameContext ctx) {
             List<Node> res = new ArrayList<>();
             String tagName = ctx.getText();
 
-            for(Node n:curNodes){
+            for (Node n : curNodes) {
                 List<Node> children = getChildren(n);
-                for(Node child : children){
-                    if(child.getNodeType()== Node.ELEMENT_NODE  && child.getNodeName().equals(tagName)){
+                for (Node child : children) {
+                    if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equals(tagName)) {
                         res.add(child);
                     }
                 }
@@ -173,22 +145,26 @@ class Key {
             curNodes = res;
             return res;
         }
-        @Override public List<Node> visitParent(XPathParser.ParentContext ctx) {
+
+        @Override
+        public List<Node> visitParent(XPathParser.ParentContext ctx) {
             List<Node> res = new ArrayList<>();
-            for(Node n : curNodes) {
-                if(n!=null && !res.contains(n.getParentNode())) res.add(n.getParentNode());
+            for (Node n : curNodes) {
+                if (n != null && !res.contains(n.getParentNode())) res.add(n.getParentNode());
             }
             curNodes = res;
             return res;
         }
+
         // one node may have multiple attributes
-        @Override public List<Node> visitAttribute(XPathParser.AttributeContext ctx) {
+        @Override
+        public List<Node> visitAttribute(XPathParser.AttributeContext ctx) {
             String attr = ctx.NAME().getText();
             List<Node> res = new ArrayList<>();
-            for (Node node : curNodes){
-                if(node!=null) {
+            for (Node node : curNodes) {
+                if (node != null) {
                     Node att = null;
-                    if(node.getAttributes()!=null){
+                    if (node.getAttributes() != null) {
                         att = node.getAttributes().getNamedItem(attr);
                     }
                     if (att != null) res.add(att);
@@ -198,24 +174,30 @@ class Key {
             curNodes = res;
             return res;
         }
-        @Override public List<Node> visitRpWithP(XPathParser.RpWithPContext ctx) {
+
+        @Override
+        public List<Node> visitRpWithP(XPathParser.RpWithPContext ctx) {
             return (List<Node>) visit(ctx.rp());
         }
-        @Override public List<Node> visitRpGoToChildren(XPathParser.RpGoToChildrenContext ctx){
+
+        @Override
+        public List<Node> visitRpGoToChildren(XPathParser.RpGoToChildrenContext ctx) {
             visit(ctx.rp(0));
             List<Node> res = (List<Node>) visit(ctx.rp(1));
             curNodes = res;
             return res;
         }
+
         //rp1[rp2] A[B]
-        @Override public List<Node> visitRpWithFilter(XPathParser.RpWithFilterContext ctx){
+        @Override
+        public List<Node> visitRpWithFilter(XPathParser.RpWithFilterContext ctx) {
             visit(ctx.rp());//cur = {A_B,A_B,A,A}
             List<Node> res = new ArrayList<>();
             List<Node> temp = new ArrayList<>(curNodes);
-            for(Node n : temp){
+            for (Node n : temp) {
                 curNodes = new ArrayList<>();
                 curNodes.add(n);
-                if((Boolean)visit(ctx.filter())){
+                if ((Boolean) visit(ctx.filter())) {
                     res.add(n);
                 }
             }
@@ -224,16 +206,17 @@ class Key {
             return res;
         }
 
-        @Override public List<Node> visitRpGoToDescent(XPathParser.RpGoToDescentContext ctx){
+        @Override
+        public List<Node> visitRpGoToDescent(XPathParser.RpGoToDescentContext ctx) {
             List<Node> rpOne = (List<Node>) visit(ctx.rp(0));
             List<Node> children = new ArrayList<>(rpOne);
             Deque<Node> queue = new ArrayDeque<>(rpOne);
             //store all the ele and root
-            while(!queue.isEmpty()){
+            while (!queue.isEmpty()) {
                 Node cur = queue.pollLast();
                 List<Node> nxt = getChildren(cur);
-                for(Node n: nxt){
-                    if(n.getNodeType()== Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE){//
+                for (Node n : nxt) {
+                    if (n.getNodeType() == Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE) {//
                         queue.offerFirst(n);
                         children.add(n);
                     }
@@ -245,7 +228,9 @@ class Key {
 
 
         }
-        @Override public List<Node> visitRpWithConcat(XPathParser.RpWithConcatContext ctx){
+
+        @Override
+        public List<Node> visitRpWithConcat(XPathParser.RpWithConcatContext ctx) {
             List<Node> temp = new ArrayList<>(curNodes);
             List<Node> rpOne = (List<Node>) visit(ctx.rp(0));
             curNodes = temp;
@@ -254,12 +239,14 @@ class Key {
             curNodes = rpOne;
             return rpOne;
         }
-        @Override public List<Node> visitText(XPathParser.TextContext ctx){
+
+        @Override
+        public List<Node> visitText(XPathParser.TextContext ctx) {
             Set<Node> set = new HashSet<>();
-            for(Node cur: curNodes){
+            for (Node cur : curNodes) {
                 List<Node> children = getChildren(cur);
-                for(Node child: children){
-                    if(child.getNodeType() == Node.TEXT_NODE && child.getTextContent() != null){
+                for (Node child : children) {
+                    if (child.getNodeType() == Node.TEXT_NODE && child.getTextContent() != null) {
                         set.add(child);
                     }
                 }
@@ -269,16 +256,19 @@ class Key {
         }
 
         //self not included
-        @Override public List<Node> visitCurrent(XPathParser.CurrentContext ctx){
+        @Override
+        public List<Node> visitCurrent(XPathParser.CurrentContext ctx) {
             return curNodes;
         }
+
         // suppose no return
         //{A_B, A,A,A_B}---cur = {B,B}
         //rp1[rp2]
-        @Override public Boolean visitFilRp(XPathParser.FilRpContext ctx){ //filter = rp
+        @Override
+        public Boolean visitFilRp(XPathParser.FilRpContext ctx) { //filter = rp
             List<Node> temp = new ArrayList<>(curNodes);
             visit(ctx.rp());//cur = {B_C,B_C,B,B}---cur = {C,C}
-            if(!curNodes.isEmpty()){
+            if (!curNodes.isEmpty()) {
                 curNodes = temp;
                 return true;
             }
@@ -286,46 +276,57 @@ class Key {
             curNodes = temp;
             return false;
         }
+
         //rp1[rp3 and rp2]
         //{ABC,ABC,AB,ABB,AC,AC}
-        @Override public Boolean visitFilAnd(XPathParser.FilAndContext ctx){
+        @Override
+        public Boolean visitFilAnd(XPathParser.FilAndContext ctx) {
             Boolean l = (Boolean) visit(ctx.filter(0));//cur = {ABC,ABC,AB,ABB}
             Boolean r = (Boolean) visit(ctx.filter(1));
 //        if (!curNodes.isEmpty()) return true;
 //        else return false;
-            return l&&r;
-        }
-        @Override public Boolean visitFilOr(XPathParser.FilOrContext ctx){
-//        return (Boolean)visit(ctx.filter(0)) ||(Boolean) visit(ctx.filter(1));
-            List<Node> temp = new ArrayList<>(curNodes);
-            Boolean l = (Boolean)visit(ctx.filter(0));
-            curNodes = temp;
-            Boolean r = (Boolean)visit(ctx.filter(1));
-//        if (!curNodes.isEmpty()) return true;
-////        else return false;
-            return l||r;
+            return l && r;
         }
 
-        @Override public Boolean visitFilWithP(XPathParser.FilWithPContext ctx) {
-            return (Boolean)visit(ctx.filter());
+        @Override
+        public Boolean visitFilOr(XPathParser.FilOrContext ctx) {
+//        return (Boolean)visit(ctx.filter(0)) ||(Boolean) visit(ctx.filter(1));
+            List<Node> temp = new ArrayList<>(curNodes);
+            Boolean l = (Boolean) visit(ctx.filter(0));
+            curNodes = temp;
+            Boolean r = (Boolean) visit(ctx.filter(1));
+//        if (!curNodes.isEmpty()) return true;
+////        else return false;
+            return l || r;
+        }
+
+        @Override
+        public Boolean visitFilWithP(XPathParser.FilWithPContext ctx) {
+            return (Boolean) visit(ctx.filter());
 //        if(!curNodes.isEmpty()) return true;
 //        else return false;
 //
 
         }
-        @Override public Boolean visitFilNot(XPathParser.FilNotContext ctx){
-            return !(Boolean)visit(ctx.filter());
+
+        @Override
+        public Boolean visitFilNot(XPathParser.FilNotContext ctx) {
+            return !(Boolean) visit(ctx.filter());
 //       if(!curNodes.isEmpty()) return false;
 //       else return true;
 
         }
-        @Override public Boolean visitFilEqual(XPathParser.FilEqualContext ctx){
+
+        @Override
+        public Boolean visitFilEqual(XPathParser.FilEqualContext ctx) {
             List<Node> temp = new ArrayList<>(curNodes);
             List<Node> rpOne = (List<Node>) visit(ctx.rp(0));
             curNodes = temp;
             List<Node> rpTwo = (List<Node>) visit(ctx.rp(1));
             curNodes = temp;
-            if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
+            if (rpOne == null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) {
+                return false;
+            }
             for (Node i : rpOne) {
                 for (Node j : rpTwo) {
                     if (i.isEqualNode(j)) {
@@ -337,13 +338,17 @@ class Key {
 
 
         }
-        @Override public Boolean visitFilIs(XPathParser.FilIsContext ctx){
+
+        @Override
+        public Boolean visitFilIs(XPathParser.FilIsContext ctx) {
             List<Node> temp = new ArrayList<>(curNodes);
             List<Node> rpOne = (List<Node>) visit(ctx.rp(0));
             curNodes = temp;
             List<Node> rpTwo = (List<Node>) visit(ctx.rp(1));
             curNodes = temp;
-            if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
+            if (rpOne == null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) {
+                return false;
+            }
             for (Node i : rpOne) {
                 for (Node j : rpTwo) {
                     if (i.isSameNode(j)) {
@@ -353,37 +358,46 @@ class Key {
             }
             return false;
         }
-        @Override public List<Node> visitXqAp(XPathParser.XqApContext ctx){
+
+        @Override
+        public List<Node> visitXqAp(XPathParser.XqApContext ctx) {
             return (List<Node>) visit(ctx.ap());
         }
-        @Override public List<Node> visitStringConst(XPathParser.StringConstContext ctx){
-            String textName = ctx.StringConstant().getText().substring(1, ctx.StringConstant().getText().length()-1);
+
+        @Override
+        public List<Node> visitStringConst(XPathParser.StringConstContext ctx) {
+            String textName = ctx.StringConstant().getText().substring(1, ctx.StringConstant().getText().length() - 1);
             Text textEle = textNode.createTextNode(textName);
             List<Node> result = new ArrayList<>();
             result.add(textEle);
             curNodes = result;
             return curNodes;
         }
-        @Override public List<Node> visitXqwithP(XPathParser.XqwithPContext ctx) {
+
+        @Override
+        public List<Node> visitXqwithP(XPathParser.XqwithPContext ctx) {
             return (List<Node>) visit(ctx.xq());
         }
 
-        @Override public List<Node> visitXqRpSingleSlash(XPathParser.XqRpSingleSlashContext ctx) {
+        @Override
+        public List<Node> visitXqRpSingleSlash(XPathParser.XqRpSingleSlashContext ctx) {
             curNodes = (List<Node>) visit(ctx.xq());
-            return (List<Node>)visit(ctx.rp());
+            return (List<Node>) visit(ctx.rp());
         }
-        @Override public List<Node> visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) {
+
+        @Override
+        public List<Node> visitXqRpDoubleSlash(XPathParser.XqRpDoubleSlashContext ctx) {
 
             //List<Node> temp = (List<Node>) visit(ctx.xq(0));
             List<Node> temp = (List<Node>) visit(ctx.xq());
             List<Node> result = new ArrayList<>(temp);
             Deque<Node> queue = new ArrayDeque<>(temp);
             //store all the ele and root
-            while(!queue.isEmpty()){
+            while (!queue.isEmpty()) {
                 Node cur = queue.pollLast();
                 List<Node> nxt = getChildren(cur);
-                for(Node n: nxt){
-                    if(n.getNodeType()== Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE){//
+                for (Node n : nxt) {
+                    if (n.getNodeType() == Node.ELEMENT_NODE || n.getNodeType() == Node.DOCUMENT_NODE) {//
                         queue.offerFirst(n);
                         result.add(n);
                     }
@@ -396,10 +410,12 @@ class Key {
             visit(ctx.rp());
             return curNodes;
         }
-        @Override public List<Node> visitXqConstructor(XPathParser.XqConstructorContext ctx) {
+
+        @Override
+        public List<Node> visitXqConstructor(XPathParser.XqConstructorContext ctx) {
             List<Node> result = new ArrayList<>();
-            List<Node> xqRes = (List<Node>)visit(ctx.xq());
-            if(xqRes.size()!=0){
+            List<Node> xqRes = (List<Node>) visit(ctx.xq());
+            if (xqRes.size() != 0) {
                 String tag = ctx.NAME(0).getText();
                 result.add(makeElem(tag, xqRes));
                 curNodes = result;
@@ -408,10 +424,13 @@ class Key {
             return result;
         }
 
-        @Override public List<Node> visitVariable(XPathParser.VariableContext ctx) {
+        @Override
+        public List<Node> visitVariable(XPathParser.VariableContext ctx) {
             return globalVar.get(ctx.getText());
         }
-        @Override public List<Node> visitTwoXqConcat(XPathParser.TwoXqConcatContext ctx){
+
+        @Override
+        public List<Node> visitTwoXqConcat(XPathParser.TwoXqConcatContext ctx) {
             List<Node> temp = new ArrayList<>(curNodes);
             List<Node> rpOne = (List<Node>) visit(ctx.xq(0));
             curNodes = temp;
@@ -422,17 +441,18 @@ class Key {
         }
 
         @Override
-        public List<Node> visitForClause(XPathParser.ForClauseContext ctx){
+        public List<Node> visitForClause(XPathParser.ForClauseContext ctx) {
             return null;
         }
-        public void flwrHelper(XPathParser.FLWRContext ctx, int level, List<Node> res, Map<String, XPathParser.XqContext> forResult){
+
+        public void flwrHelper(XPathParser.FLWRContext ctx, int level, List<Node> res, Map<String, XPathParser.XqContext> forResult) {
             //base case
-            if(level==ctx.forClause().var().size()){
+            if (level == ctx.forClause().var().size()) {
                 Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
                 if (ctx.letClause() != null) {
                     visit(ctx.letClause());
                 }
-                if (ctx.whereClause() ==null || ctx.whereClause() != null && (Boolean)visit(ctx.whereClause())) {
+                if (ctx.whereClause() == null || ctx.whereClause() != null && (Boolean) visit(ctx.whereClause())) {
                     List<Node> c = (List<Node>) visit(ctx.returnClause());
                     if (c != null) {
                         res.addAll(c);
@@ -440,35 +460,35 @@ class Key {
                 }
                 globalVar = oldContext;
                 return;
-            }
-            else{
+            } else {
                 String var = ctx.forClause().var(level).getText();
-                XPathParser.XqContext  xqCon= forResult.get(ctx.forClause().var(level).getText());
+                XPathParser.XqContext xqCon = forResult.get(ctx.forClause().var(level).getText());
                 List<Node> varNodes = (List<Node>) visit(xqCon);
                 //check docu
 //                for(int i = 0;i< varNodes.size();i++){
 //                    if(varNodes.get(i).getNodeType() == Node.DOCUMENT_NODE) varNodes.remove(varNodes.get(i));
 //                }
-                for (int i = 0;i<varNodes.size();i++){
+                for (int i = 0; i < varNodes.size(); i++) {
                     Node n = varNodes.get(i);
                     List<Node> nList = new ArrayList<>();
                     nList.add(n);
                     globalVar.put(var, nList);
-                    flwrHelper(ctx, level + 1, res,forResult);
+                    flwrHelper(ctx, level + 1, res, forResult);
                 }
 
             }
         }
 
-        @Override public List<Node> visitFLWR(XPathParser.FLWRContext ctx){
+        @Override
+        public List<Node> visitFLWR(XPathParser.FLWRContext ctx) {
             List<Node> result = new ArrayList<>();
             HashMap<String, List<Node>> oldContext = new HashMap<>(globalVar);
             Map<String, XPathParser.XqContext> forResult = new HashMap<>();
             int size = ctx.forClause().var().size();
-            for(int i = 0;i<size;i++){
+            for (int i = 0; i < size; i++) {
                 XPathParser.VarContext var = ctx.forClause().var(i);
                 XPathParser.XqContext xq = ctx.forClause().xq(i);
-                forResult.put(var.getText(),xq);
+                forResult.put(var.getText(), xq);
             }
             flwrHelper(ctx, 0, result, forResult);
             globalVar = new HashMap<>(oldContext);
@@ -476,26 +496,34 @@ class Key {
             return result;
         }
 
-        @Override public List<Node> visitReturnClause(XPathParser.ReturnClauseContext ctx) {
+        @Override
+        public List<Node> visitReturnClause(XPathParser.ReturnClauseContext ctx) {
             return (List<Node>) visit(ctx.xq());
         }
-        @Override public Boolean visitWhereClause(XPathParser.WhereClauseContext ctx) {
+
+        @Override
+        public Boolean visitWhereClause(XPathParser.WhereClauseContext ctx) {
             return (Boolean) visit(ctx.cond());
         }
-        @Override public List<Node> visitLetClause(XPathParser.LetClauseContext ctx){
+
+        @Override
+        public List<Node> visitLetClause(XPathParser.LetClauseContext ctx) {
             for (int i = 0; i < ctx.var().size(); i++) {
-                globalVar.put(ctx.var(i).getText(), (List<Node>)visit(ctx.xq(i)));
+                globalVar.put(ctx.var(i).getText(), (List<Node>) visit(ctx.xq(i)));
             }
             return null;
         }
 
-        @Override public Boolean visitXqEqual(XPathParser.XqEqualContext ctx){
+        @Override
+        public Boolean visitXqEqual(XPathParser.XqEqualContext ctx) {
             List<Node> temp = new ArrayList<>(curNodes);
             List<Node> rpOne = (List<Node>) visit(ctx.xq(0));
             curNodes = temp;
             List<Node> rpTwo = (List<Node>) visit(ctx.xq(1));
             curNodes = temp;
-            if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
+            if (rpOne == null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) {
+                return false;
+            }
             for (Node i : rpOne) {
                 for (Node j : rpTwo) {
                     if (i.isEqualNode(j)) {
@@ -513,7 +541,9 @@ class Key {
             curNodes = temp;
             List<Node> rpTwo = (List<Node>) visit(ctx.xq(1));
             curNodes = temp;
-            if (rpOne== null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) { return false;}
+            if (rpOne == null || rpTwo == null || rpOne.isEmpty() || rpTwo.isEmpty()) {
+                return false;
+            }
             for (Node i : rpOne) {
                 for (Node j : rpTwo) {
                     if (i.isSameNode(j)) {
@@ -527,40 +557,40 @@ class Key {
         @Override
         public Boolean visitXqCondOr(XPathParser.XqCondOrContext ctx) {
             List<Node> temp = new ArrayList<>(curNodes);
-            Boolean l = (Boolean)visit(ctx.cond(0));
+            Boolean l = (Boolean) visit(ctx.cond(0));
             curNodes = temp;
-            Boolean r = (Boolean)visit(ctx.cond(1));
-            return l||r;
+            Boolean r = (Boolean) visit(ctx.cond(1));
+            return l || r;
         }
 
         @Override
         public Boolean visitXqCondNot(XPathParser.XqCondNotContext ctx) {
-            return !(Boolean)visit(ctx.cond());
+            return !(Boolean) visit(ctx.cond());
         }
 
         @Override
         public Boolean visitXqCondAnd(XPathParser.XqCondAndContext ctx) {
             Boolean l = (Boolean) visit(ctx.cond(0));//cur = {ABC,ABC,AB,ABB}
             Boolean r = (Boolean) visit(ctx.cond(1));
-            return l&&r;
+            return l && r;
         }
 
         @Override
-        public Boolean visitXqEmpty(XPathParser.XqEmptyContext ctx){
-            List<Node> xqResult = (List<Node>)visit(ctx.xq());
-            if(xqResult.isEmpty()){
+        public Boolean visitXqEmpty(XPathParser.XqEmptyContext ctx) {
+            List<Node> xqResult = (List<Node>) visit(ctx.xq());
+            if (xqResult.isEmpty()) {
                 return true;
             }
             return false;
         }
 
         @Override
-        public Boolean visitXqCondwithP(XPathParser.XqCondwithPContext ctx){
-            return (Boolean)visit(ctx.cond());
+        public Boolean visitXqCondwithP(XPathParser.XqCondwithPContext ctx) {
+            return (Boolean) visit(ctx.cond());
         }
 
         @Override
-        public Boolean visitXqSome(XPathParser.XqSomeContext ctx){
+        public Boolean visitXqSome(XPathParser.XqSomeContext ctx) {
 //        Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
 //        for (int i = 0; i < ctx.var().size(); i++) {
 //            globalVar.put(ctx.var(i).getText(),(List<Node>)visit(ctx.xq(i)));
@@ -569,21 +599,21 @@ class Key {
 //        globalVar = new HashMap<>(oldContext);
 //        return r;
             Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
-            Boolean r = someHelper(ctx,0);
+            Boolean r = someHelper(ctx, 0);
             globalVar = new HashMap<>(oldContext);
             return r;
 
         }
-        public Boolean someHelper(XPathParser.XqSomeContext ctx, int level){
+
+        public Boolean someHelper(XPathParser.XqSomeContext ctx, int level) {
             //base case
-            if(level==ctx.var().size()){
+            if (level == ctx.var().size()) {
                 Boolean r = (Boolean) visit(ctx.cond());
                 return r;
-            }
-            else{
+            } else {
                 String var = ctx.var(level).getText();
                 List<Node> varNodes = (List<Node>) visit(ctx.xq(level));
-                for (int i = 0;i<varNodes.size();i++){
+                for (int i = 0; i < varNodes.size(); i++) {
                     Map<String, List<Node>> oldContext = new HashMap<>(globalVar);
                     Node n = varNodes.get(i);
                     List<Node> nList = new ArrayList<>();
@@ -591,7 +621,7 @@ class Key {
                     globalVar.put(var, nList);
                     Boolean t = someHelper(ctx, level + 1);
                     globalVar = new HashMap<>(oldContext);
-                    if(t){
+                    if (t) {
                         return true;
                     }
                 }
@@ -599,142 +629,102 @@ class Key {
             }
             return false;
         }
+
         @Override
-        public List<Node> visitNames(XPathParser.NamesContext ctx) { return null; }
+        public List<Node> visitNames(XPathParser.NamesContext ctx) {
+            return null;
+        }
 
-//        @Override public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) { return (List<Node>)visit(ctx.joinClause()); }
-//
-//        @Override public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
-//            List<Node> res = new ArrayList<>();
-//            List<Node> temp = new ArrayList<>(curNodes);
-//            List<Node> left = (List<Node>)visit(ctx.xq(0));
-//            curNodes = temp;
-//            List<Node> right = (List<Node>)visit(ctx.xq(1));
-//            List<String> lAttrs = new ArrayList<>();
-//            for(TerminalNode n : ctx.names(0).NAME()){
-//                lAttrs.add(n.getText());
-//            }
-//            List<String> rAttrs = new ArrayList<>();
-//            for(TerminalNode n :ctx.names(1).NAME()){
-//                rAttrs.add(n.getText());
-//            }
-//
-//            //one attrs is empty
-//            if(lAttrs.isEmpty() || rAttrs.isEmpty()){
-//                return res;
-//            }
-//
-//            //for leftTuple : get Key and store in the hashMap
-//            Map<String, List<Node>> map = new HashMap<>();
-//
-//            for(Node l : left){
-//                //Key k = new Key();
-//                String key = "";
-//                NodeList children = l.getChildNodes();
-//                for(int i = 0; i<lAttrs.size();i++){
-//                    String ls = lAttrs.get(i);
-//                    for(int j = 0; j < children.getLength(); j++){
-//                        if(children.item(j).getNodeType() == Node.ELEMENT_NODE && children.item(j).getNodeName().equals(ls)) {
-//                            key = key + i + children.item(j).getTextContent();
-//                            break;
-//                        }
-//                    }
-//                }
-//                map.putIfAbsent(key, new ArrayList<>());
-//                map.get(key).add(l);
-//            }
-//            for(Node r : right){
-//                String key = "";
-//                NodeList children = r.getChildNodes();
-//                for(int i = 0; i<rAttrs.size();i++){
-//                    String rs = rAttrs.get(i);
-//                    for(int j = 0; j < children.getLength(); j++){
-//                        if(children.item(j).getNodeType() == Node.ELEMENT_NODE && children.item(j).getNodeName().equals(rs)) {
-//                            key = key +i + children.item(j).getTextContent();
-//                            break;
-//                        }
-//                    }
-//                    if(map.containsKey(key)){
-//                        for(Node l : map.get(key)){
-//                            for (int j = 0; j < children.getLength(); j++) {
-//                                Node curElement = children.item(j);
-//                                Node newNode = l.getOwnerDocument().importNode(curElement, true);
-//                                l.appendChild(newNode);
-//                            }
-//                            res.add(l);
-//                        }
-//                    }
-//
-//                }
-//
-//
-//            }
-//            this.curNodes = res;
-//            return res;
-//        }
-@       Override public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) { return (List<Node>)visit(ctx.joinClause()); }
+        public String createKey(Node e, int i) throws TransformerException {
+            List<Node> r = getChildren(e);
+            Node newEle = makeElem("attr" + i, r);
+            newEle.setNodeValue(e.getTextContent());
+            StringWriter writer = new StringWriter();
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.INDENT, "no");
+            transformer.transform(new DOMSource(newEle), new StreamResult(writer));
+            return writer.toString();
+        }
 
-        @Override public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
+        @Override
+        public List<Node> visitXqJoin(XPathParser.XqJoinContext ctx) {
+            return (List<Node>) visit(ctx.joinClause());
+        }
+
+        @Override
+        public List<Node> visitJoinClause(XPathParser.JoinClauseContext ctx) {
             List<Node> res = new ArrayList<>();
             List<Node> temp = new ArrayList<>(curNodes);
-            List<Node> left = (List<Node>)visit(ctx.xq(0));
+            List<Node> left = (List<Node>) visit(ctx.xq(0));
             curNodes = temp;
-            List<Node> right = (List<Node>)visit(ctx.xq(1));
+            List<Node> right = (List<Node>) visit(ctx.xq(1));
             List<String> lAttrs = new ArrayList<>();
-            for(TerminalNode n : ctx.names(0).NAME()){
+            for (TerminalNode n : ctx.names(0).NAME()) {
                 lAttrs.add(n.getText());
             }
             List<String> rAttrs = new ArrayList<>();
-            for(TerminalNode n :ctx.names(1).NAME()){
+            for (TerminalNode n : ctx.names(1).NAME()) {
                 rAttrs.add(n.getText());
             }
 
             //one attrs is empty
-            if(lAttrs.isEmpty() || rAttrs.isEmpty()){
+            if (lAttrs.isEmpty() || rAttrs.isEmpty()) {
                 return res;
             }
 
             //for leftTuple : get Key and store in the hashMap
-            Map<Key, List<Node>> map = new HashMap<>();
+            Map<String, List<Node>> map = new HashMap<>();
 
-            for(Node l : left){
-                Key k = new Key();
+            for (Node l : left) {
+                String key = "";
                 NodeList children = l.getChildNodes();
-                for(String ls : lAttrs){
-                    for(int i = 0; i < children.getLength(); i++){
-                        if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(ls)) {
-                            k.keyNodes.add(children.item(i));
+                for (int i = 0; i < lAttrs.size(); i++) {
+                    String ls = lAttrs.get(i);
+                    for (int j = 0; j < children.getLength(); j++) {
+                        if (children.item(j).getNodeType() == Node.ELEMENT_NODE && children.item(j).getNodeName().equals(ls)) {
+                            // key = key + i + children.item(j).getTextContent();
+                            try {
+                                key += createKey(children.item(j), i);
+                            } catch (TransformerException ex) {
+                                ex.printStackTrace();
+                            }
                             break;
                         }
                     }
                 }
-                map.putIfAbsent(k, new ArrayList<>());
-                map.get(k).add(l);
+                map.putIfAbsent(key, new ArrayList<>());
+                map.get(key).add(l);
             }
-            for(Node r : right){
-                Key k = new Key();
+            for (Node r : right) {
+                String key = "";
                 NodeList children = r.getChildNodes();
-                for(String rs : rAttrs){
-                    for(int i = 0; i < children.getLength(); i++){
-                        if(children.item(i).getNodeType() == Node.ELEMENT_NODE && children.item(i).getNodeName().equals(rs)) {
-                            k.keyNodes.add(children.item(i));
+                for (int i = 0; i < rAttrs.size(); i++) {
+                    String rs = rAttrs.get(i);
+                    for (int j = 0; j < children.getLength(); j++) {
+                        if (children.item(j).getNodeType() == Node.ELEMENT_NODE && children.item(j).getNodeName().equals(rs)) {
+                            try {
+                                key += createKey(children.item(j), i);
+                            } catch (TransformerException ex) {
+                                ex.printStackTrace();
+                            }
                             break;
                         }
                     }
-                }
-                if(map.containsKey(k)){
-                    for(Node l : map.get(k)){
-                        List<Node> join = new LinkedList<>();
-                        join.addAll(getChildren(l));
-                        join.addAll(getChildren(r));
-                        res.add(makeElem(l.getNodeName(), join));
+                    if (map.containsKey(key)) {
+                        for (Node l : map.get(key)) {
+                            for (int j = 0; j < children.getLength(); j++) {
+                                Node curElement = children.item(j);
+                                Node newNode = l.getOwnerDocument().importNode(curElement, true);
+                                l.appendChild(newNode);
+                            }
+                            res.add(l);
+                        }
                     }
                 }
 
             }
-
             this.curNodes = res;
             return res;
         }
-
     }
