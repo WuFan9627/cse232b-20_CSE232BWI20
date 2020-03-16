@@ -15,6 +15,8 @@ class TreeNode{
 }
 
 class reWriteVisitor{
+    Map<String, String> joinList = new HashMap<>();
+    Map<String, StringBuilder> resList = new HashMap<>();
     List<List<String>> unrelated = new ArrayList<>();
     List<List<String>> left = new ArrayList<>();
     Map<String,TreeNode> varToRoot = new HashMap<>();
@@ -79,19 +81,44 @@ class reWriteVisitor{
         return res;
     }
     public void separate(){
+        int maxNum = 0;
+        List<List<List<String>>> sequence = new ArrayList<>();
+        for(List<String> list: varToVarEQ.keySet()){
+            List<List<List<String>>> res =  separateHelper(list);
+            if(res.get(0).size()>maxNum){
+                maxNum = res.get(0).size();
+                sequence = new ArrayList<>(res);
+
+            }
+        }
+        unrelated = sequence.get(0);
+        left = sequence.get(1);
+    }
+    public List<List<List<String>>> separateHelper(List<String> input){
+        List<List<List<String>>> res = new ArrayList<>();
         Set<String> set = new HashSet<>();
+        List<List<String>> temp_unrelated = new ArrayList<>();
+        List<List<String>> temp_left = new ArrayList<>();
+        set.add(input.get(0));set.add(input.get(1));
+        temp_unrelated.add(input);
         for(List<String> list: varToVarEQ.keySet()){
             String s1 = list.get(0);
             String s2 = list.get(1);
             if(!set.contains(s1) &&!set.contains(s2) ){
-                unrelated.add(list);
+                temp_unrelated.add(list);
                 set.add(s1); set.add(s2);
             }
+            else if(set.contains(s1) &&set.contains(s2) ){
+                continue;
+            }
             else{
-                left.add(list);
+                temp_left.add(list);
             }
         }
+        res.add(temp_unrelated);res.add(temp_left);
+      return res;
     }
+
     public String reWrite(InputStream in, Boolean flag) throws IOException{
         CharStream stream = CharStreams.fromStream(in);
         XPathLexer lexer = new XPathLexer(stream);
@@ -182,12 +209,20 @@ class reWriteVisitor{
         return list;
     }
 
+    public void replace(String a, String b ){
+        for(String s: joinList.keySet()){
+            String v = joinList.get(s);
+            if (v.equals(a)){
+                joinList.put(s,b);
+            }
+        }
+    }
+
     public StringBuilder getResultBushy(){
         //no join
         if(varToVarEQ.size()==0) return null;
         separate();
-        Map<String, String> joinList = new HashMap<>();
-        Map<String, StringBuilder> resList = new HashMap<>();
+
         for(List<String> l : unrelated){
             String tree1 = l.get(0);
             String tree2 = l.get(1);
@@ -211,12 +246,23 @@ class reWriteVisitor{
                     String temp = s1;s1 = s2;s2 = temp; //swap, s1 in resList, s2 in joinList
                     rev = true;
                 }
-                StringBuilder sb = resList.get(s1);
-                sb.insert(0,"join (\n").append(",\n").append(resList.get(joinList.get(s2))).append(",")
+                if(s1.equals(joinList.get(s2))){
+                    StringBuilder sb = resList.get(s1);
+                    sb = appendEQToRes(sb,l);
+                    resList.put(s1, sb);
+                }
+                else{
+                    StringBuilder sb = resList.get(s1);
+                    sb.insert(0,"join (\n").append(",\n").append(resList.get(joinList.get(s2))).append(",")
                             .append(appendEQ(l,rev)).append(")");
-                resList.put(s1, sb);
-                resList.remove(joinList.get(s2));
-                joinList.put(s2,s1);
+                    String t = joinList.get(s2);
+                    resList.put(s1, sb);
+                    resList.remove(t);
+                    joinList.put(joinList.get(s2),s1);
+                    //find all joinList.get(s2) in joinList and replace them with s1
+                    replace(t,s1);
+                }
+
             }
             else if((!resList.containsKey(s1) && !joinList.containsKey(s1) && resList.containsKey(s2)) ||
                     (!resList.containsKey(s2) && !joinList.containsKey(s2) && resList.containsKey(s1)) ){
@@ -244,8 +290,9 @@ class reWriteVisitor{
                 StringBuilder sb =resList.get(joinList.get(s1));
                 sb.insert(0,"join (\n").append(",\n").append(flwrRes(n2)).append(",")
                         .append(appendEQ(l,rev)).append(")");
-                resList.put(s1, sb);
-                joinList.put(s2,s1);
+                resList.put(joinList.get(s1), sb);
+                joinList.put(s2,joinList.get(s1));
+
 
             }
             else if(resList.containsKey(s1) && resList.containsKey(s2)){
@@ -253,17 +300,28 @@ class reWriteVisitor{
                 sb.insert(0,"join (\n").append(",\n").append(resList.get(s2)).append(",")
                         .append(appendEQ(l,false)).append(")");
                 resList.put(s1, sb);
+                replace(s2,s1);
+                joinList.put(s2,s1);
                 resList.remove(s2);
+
 
             }
             else if(joinList.containsKey(s1) && joinList.containsKey(s2)){
-                StringBuilder sb =resList.get(joinList.get(s1));
-                StringBuilder sb2 =resList.get(joinList.get(s2));
-                sb.insert(0,"join (\n").append(",\n").append(sb2).append(",")
-                        .append(appendEQ(l,false)).append(")");
-                joinList.put(s2, joinList.get(s1));
-                resList.remove(joinList.get(s2));
-                resList.put(joinList.get(s1),sb);
+                if(joinList.get(s1).equals(joinList.get(s2))){
+                    //append eq
+                    StringBuilder sb =resList.get(joinList.get(s1));
+                    sb = appendEQToRes(sb,l);
+                    resList.put(joinList.get(s1), sb);
+                }
+                else{
+                    StringBuilder sb =resList.get(joinList.get(s1));
+                    StringBuilder sb2 =resList.get(joinList.get(s2));
+                    sb.insert(0,"join (\n").append(",\n").append(sb2).append(",")
+                            .append(appendEQ(l,false)).append(")");
+                    joinList.put(s2, joinList.get(s1));
+                    resList.remove(joinList.get(s2));
+                    resList.put(joinList.get(s1),sb);
+                }
             }
         }
         if(resList.size()==1){
@@ -276,6 +334,29 @@ class reWriteVisitor{
             return getResult();
         }
         return null;
+    }
+    public StringBuilder appendEQToRes(StringBuilder sb, List<String> l){
+        List<List<String>> appendee = appendEQHelper(l);
+        int idx = sb.toString().lastIndexOf("}</tuple>");
+        String appender =  sb.substring(idx+11,sb.toString().length()-2);
+        sb.delete(idx + 10,sb.length());
+        String[] parts = appender.split("],");
+        String part1 = parts[0].substring(0, parts[0].length()); // a1 ,a2
+        String part2 = parts[1].substring(1,parts[1].length()); // b1 ,b2
+        List<String> part1List = new ArrayList<>(Arrays.asList(part1.split(",")));
+        List<String> part2List = new ArrayList<>(Arrays.asList(part2.split(",")));
+        part1List.addAll(appendee.get(0));
+        part2List.addAll(appendee.get(1));
+        sb.append("[");
+        for(String s: part1List){
+            sb.append(s).append(",");
+        }
+        sb.deleteCharAt(sb.length()-1).append("],").append("[");
+        for(String s: part2List){
+            sb.append(s).append(",");
+        }
+        sb.deleteCharAt(sb.length()-1).append("])");
+        return sb;
     }
     public StringBuilder getResult(){
         Set<String> visited = new HashSet<>();
@@ -317,26 +398,7 @@ class reWriteVisitor{
                         .append(appendEQ(entry,true)).append(")");
             }
             else if(visited.contains(tree1) && visited.contains(tree1)){//add eq
-                List<List<String>> appendee = appendEQHelper(entry);
-                int idx = joinAll.toString().lastIndexOf("}</tuple>");
-                String appender =  joinAll.substring(idx+11,joinAll.toString().length()-2);
-                joinAll.delete(idx + 10,joinAll.length());
-                String[] parts = appender.split("],");
-                String part1 = parts[0].substring(1); // a1 ,a2
-                String part2 = parts[1].substring(1,parts[1].length()-1); // b1 ,b2
-                List<String> part1List = new ArrayList<>(Arrays.asList(part1.split(",")));
-                List<String> part2List = new ArrayList<>(Arrays.asList(part2.split(",")));
-                part1List.addAll(appendee.get(0));
-                part2List.addAll(appendee.get(1));
-                joinAll.append("[");
-                for(String s: part1List){
-                    joinAll.append(s).append(",");
-                }
-                joinAll.deleteCharAt(joinAll.length()-1).append("],").append("[");
-                for(String s: part2List){
-                    joinAll.append(s).append(",");
-                }
-                joinAll.deleteCharAt(joinAll.length()-1).append("])");
+                 joinAll = appendEQToRes(joinAll,entry);
             }
             else {
                 System.out.println("No join happen");
