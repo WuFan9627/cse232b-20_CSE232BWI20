@@ -11,19 +11,26 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 
-public class UserTest  {
+public class UserTest {
     public static void main(String[] args) throws IOException, TransformerException, ParserConfigurationException {
 //        Scanner input = new Scanner(System.in);
 //        System.out.print("Enter query file name : ");
 //        String file = input.next();
+
 //        if(args.length==0){
-//            System.out.println("Need input file");
+//            System.out.println("Need input file and flag");
 //        }
 //        String file = args[0];
+//        String flag = args[1];
+//        Boolean f = true;
+//
+//        if(flag.equals("-L")) f = true;
+//        if(flag.equals("-B")) f = false;
+//        else System.out.println("please enter the correct flag");
         String file = "XPathTest.txt";
         InputStream in = System.in;
         InputStream in2 = System.in;
-        if(file != null) {
+        if(file != null){
             in = new FileInputStream(file);
             in2 = new FileInputStream(file);
         }
@@ -53,12 +60,12 @@ public class UserTest  {
 
         //---below do the milestone3---
         reWriteVisitor rw = new reWriteVisitor();
-        String rew = rw.reWrite(in);
+        String rew = rw.reWrite(in,false);//true = left, false = bushy
         System.out.println(rew);
         System.out.println("----------------------");
 
         if(rew==null){
-            System.out.println("rewrite failed");
+            System.out.println("cannot do left deep join, rewrite failed");
             CharStream stream = CharStreams.fromStream(in2);
             XPathLexer lexer = new XPathLexer(stream);
             CommonTokenStream cts = new CommonTokenStream(lexer);

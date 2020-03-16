@@ -1,7 +1,6 @@
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +15,25 @@ class TreeNode{
 }
 
 class reWriteVisitor{
+    List<List<String>> unrelated = new ArrayList<>();
+    List<List<String>> left = new ArrayList<>();
     Map<String,TreeNode> varToRoot = new HashMap<>();
     Map<String,TreeNode> varToNode = new HashMap<>();
     Map<String,String> varToStringEQ = new HashMap<>(); // al1 : "John"
     Map<List<String>,List<List<String>>> varToVarEQ = new HashMap<>();
+//            (new Comparator<List<String>>(){
+//        @Override
+//        public int compare(List<String> o1, List<String> o2){
+//            int idxl10 = Integer.parseInt(varToNode.get(o1.get(0)).TreeRoot);
+//            int idxl11 = Integer.parseInt(varToNode.get(o1.get(1)).TreeRoot);
+//            int idxl20 = Integer.parseInt(varToNode.get(o2.get(0)).TreeRoot);
+//            int idxl21 = Integer.parseInt(varToNode.get(o2.get(1)).TreeRoot);
+//            if (idxl10<idxl20) return -1;
+//            else if(idxl10>idxl20) return 1;
+//            else if(idxl11 < idxl21) return -1;
+//            else return 1;
+//        }
+//    });
     private void sortHelper(Set<String> set,List<List<String>> res){
         for(Map.Entry<List<String>, List<List<String>>> entry : varToVarEQ.entrySet()){
             String val1 = entry.getKey().get(0); String val2 = entry.getKey().get(1);
@@ -64,18 +78,36 @@ class reWriteVisitor{
         }
         return res;
     }
-    public String reWrite(InputStream in) throws IOException {
+    public void separate(){
+        Set<String> set = new HashSet<>();
+        for(List<String> list: varToVarEQ.keySet()){
+            String s1 = list.get(0);
+            String s2 = list.get(1);
+            if(!set.contains(s1) &&!set.contains(s2) ){
+                unrelated.add(list);
+                set.add(s1); set.add(s2);
+            }
+            else{
+                left.add(list);
+            }
+        }
+    }
+    public String reWrite(InputStream in, Boolean flag) throws IOException{
         CharStream stream = CharStreams.fromStream(in);
         XPathLexer lexer = new XPathLexer(stream);
         CommonTokenStream cts = new CommonTokenStream(lexer);
         XPathParser parser = new XPathParser(cts);
         XPathParser.XqContext  context = parser.xq();
         XPathParser.ForClauseContext forClauseContext = (XPathParser.ForClauseContext) context.getChild(0);
+        //check if xq = join
+        for (int i = 0; i < forClauseContext.var().size(); ++i){
+            String xq = forClauseContext.xq(i).getText();
+            if(xq.indexOf("join")!=-1) return null;
+        }
         XPathParser.WhereClauseContext whereClauseContext = (XPathParser.WhereClauseContext) context.getChild(1);
         XPathParser.ReturnClauseContext returnClauseContext = (XPathParser.ReturnClauseContext) context.getChild(2);
         //no join
         if(whereClauseContext==null) return null;
-
         //create varToNode and varToMap;
         for (int i = 0; i < forClauseContext.var().size(); ++i){
             String var = forClauseContext.var(i).getText().substring(1);
@@ -104,7 +136,9 @@ class reWriteVisitor{
         //create where: varToString and varToVar
         evalWhere(whereClauseContext.cond());
         StringBuilder res = new StringBuilder();
-        StringBuilder getRes = getResult();
+        StringBuilder getRes = new StringBuilder();
+        if(flag) getRes = getResult();
+        else getRes = getResultBushy();
         if(getRes==null) return null;
         res.append("for $tuple in ").append(getRes);
         //return clause
@@ -112,9 +146,15 @@ class reWriteVisitor{
         return res.toString();
     }
 
-    public StringBuilder appendEQ(List<String> input){
+    public StringBuilder appendEQ(List<String> input, Boolean reverse){
         StringBuilder sb = new StringBuilder();
-        List<List<String>> list = appendEQHelper(input);
+        List<List<String>> list = new ArrayList<>();
+        if(reverse==false) list = appendEQHelper(input);
+        else {
+            List<List<String>> temp  = appendEQHelper(input);
+            list.add(temp.get(1));
+            list.add(temp.get(0));
+        }
         List<String> l1 = list.get(0);
         List<String> l2 = list.get(1);
         sb.append("[");
@@ -142,11 +182,106 @@ class reWriteVisitor{
         return list;
     }
 
+    public StringBuilder getResultBushy(){
+        //no join
+        if(varToVarEQ.size()==0) return null;
+        separate();
+        Map<String, String> joinList = new HashMap<>();
+        Map<String, StringBuilder> resList = new HashMap<>();
+        for(List<String> l : unrelated){
+            String tree1 = l.get(0);
+            String tree2 = l.get(1);
+            if(tree1.equals(tree2)) continue;
+            StringBuilder joinAll = new StringBuilder();
+            TreeNode n1 = varToNode.get(tree1)==null? varToRoot.get(tree1) : varToNode.get(tree1);
+            TreeNode n2 = varToNode.get(tree2)==null? varToRoot.get(tree2) : varToNode.get(tree2);
+            StringBuilder tree1Res = flwrRes(n1);
+            StringBuilder tree2Res = flwrRes(n2);
+            joinAll.append("join (\n").append(tree1Res).append(", ")
+                    .append(tree2Res).append(", ")
+                    .append(appendEQ(l,false)).append(")");
+            resList.put(tree1, joinAll);
+            joinList.put(tree2, tree1);
+        }
+        for(List<String> l : left){
+            String s1 = l.get(0); String s2 = l.get(1);
+            if((resList.containsKey(s1) && joinList.containsKey(s2)) || (resList.containsKey(s2) && joinList.containsKey(s1))){
+                Boolean rev = false;
+                if(resList.containsKey(s2) && joinList.containsKey(s1)){
+                    String temp = s1;s1 = s2;s2 = temp; //swap, s1 in resList, s2 in joinList
+                    rev = true;
+                }
+                StringBuilder sb = resList.get(s1);
+                sb.insert(0,"join (\n").append(",\n").append(resList.get(joinList.get(s2))).append(",")
+                            .append(appendEQ(l,rev)).append(")");
+                resList.put(s1, sb);
+                resList.remove(joinList.get(s2));
+                joinList.put(s2,s1);
+            }
+            else if((!resList.containsKey(s1) && !joinList.containsKey(s1) && resList.containsKey(s2)) ||
+                    (!resList.containsKey(s2) && !joinList.containsKey(s2) && resList.containsKey(s1)) ){
+                Boolean rev = false;
+                if(!resList.containsKey(s1) && !joinList.containsKey(s1)){
+                    String temp = s1;s1 = s2;s2 = temp; //swap, s1 in resList, s2 is empty
+                    rev = true;
+                }
+                TreeNode n2 = varToNode.get(s2)==null? varToRoot.get(s2) : varToNode.get(s2);
+                StringBuilder sb = resList.get(s1);
+                sb.insert(0,"join (\n").append(",\n").append(flwrRes(n2)).append(",")
+                        .append(appendEQ(l,rev)).append(")");
+                resList.put(s1, sb);
+                joinList.put(s2,s1);
+
+            }
+            else if((!resList.containsKey(s1) && !joinList.containsKey(s1) && joinList.containsKey(s2)) ||
+                    (!resList.containsKey(s2) && !joinList.containsKey(s2) && joinList.containsKey(s1)) ){
+                Boolean rev = false;
+                if(!resList.containsKey(s1) && !joinList.containsKey(s1)){
+                    String temp = s1;s1 = s2;s2 = temp; //swap, s1 in joinList, s2 is empty
+                    rev = true;
+                }
+                TreeNode n2 = varToNode.get(s2)==null? varToRoot.get(s2) : varToNode.get(s2);
+                StringBuilder sb =resList.get(joinList.get(s1));
+                sb.insert(0,"join (\n").append(",\n").append(flwrRes(n2)).append(",")
+                        .append(appendEQ(l,rev)).append(")");
+                resList.put(s1, sb);
+                joinList.put(s2,s1);
+
+            }
+            else if(resList.containsKey(s1) && resList.containsKey(s2)){
+                StringBuilder sb =resList.get(s1);
+                sb.insert(0,"join (\n").append(",\n").append(resList.get(s2)).append(",")
+                        .append(appendEQ(l,false)).append(")");
+                resList.put(s1, sb);
+                resList.remove(s2);
+
+            }
+            else if(joinList.containsKey(s1) && joinList.containsKey(s2)){
+                StringBuilder sb =resList.get(joinList.get(s1));
+                StringBuilder sb2 =resList.get(joinList.get(s2));
+                sb.insert(0,"join (\n").append(",\n").append(sb2).append(",")
+                        .append(appendEQ(l,false)).append(")");
+                joinList.put(s2, joinList.get(s1));
+                resList.remove(joinList.get(s2));
+                resList.put(joinList.get(s1),sb);
+            }
+        }
+        if(resList.size()==1){
+            for(Map.Entry<String, StringBuilder> entry: resList.entrySet()){
+                StringBuilder value = entry.getValue();
+                return value;
+            }
+        }else{
+            System.out.println("can not do bushy join, going to do left deep join");
+            return getResult();
+        }
+        return null;
+    }
     public StringBuilder getResult(){
         Set<String> visited = new HashSet<>();
         StringBuilder joinAll = new StringBuilder();
         //no join
-        if(varToRoot.size()<2) return null;
+        if(varToVarEQ.size()==0) return null;
         List<List<String>> sequence = sort();
         for(int i = 0;i<sequence.size();i++){
             List<String> entry = sequence.get(i);
@@ -161,7 +296,7 @@ class reWriteVisitor{
                 StringBuilder tree2Res = flwrRes(n2);
                 joinAll.append("join (\n").append(tree1Res).append(", ")
                         .append(tree2Res).append(", ")
-                        .append(appendEQ(entry)).append(")");
+                        .append(appendEQ(entry,false)).append(")");
                 visited.add(tree1);
                 visited.add(tree2);
             }
@@ -169,13 +304,17 @@ class reWriteVisitor{
                 visited.add(tree2);
                 joinAll.insert(0,"join (\n")
                         .append(",\n").append(flwrRes(n2)).append(",")
-                        .append(appendEQ(entry)).append(")");
+                        .append(appendEQ(entry,false)).append(")");
             }
             else if(!visited.contains(tree1) && visited.contains(tree2)){
+                //reverse the eq list
                 visited.add(tree1);
-                joinAll.insert(0,",").insert(0,flwrRes(n1))
-                        .insert(0,"join (\n").append(",")
-                        .append(appendEQ(entry)).append(")");
+//                joinAll.insert(0,",").insert(0,flwrRes(n1))
+//                        .insert(0,"join (\n").append(",")
+//                        .append(appendEQ(entry,false)).append(")");
+                joinAll.insert(0,"join (\n")
+                        .append(",\n").append(flwrRes(n1)).append(",")
+                        .append(appendEQ(entry,true)).append(")");
             }
             else if(visited.contains(tree1) && visited.contains(tree1)){//add eq
                 List<List<String>> appendee = appendEQHelper(entry);
@@ -203,51 +342,11 @@ class reWriteVisitor{
                 System.out.println("No join happen");
             }
         }
-        //handel not joined flwr, go to varToRoot and check if it's in set
+        //handel not joined flwr
         for(String t : varToRoot.keySet()){
-            if(!visited.contains(t)) joinAll.append(",\n").append(withoutFor(varToRoot.get(t)));
+            if(!visited.contains(t)) return null;
         }
         return new StringBuilder(joinAll);
-    }
-    public StringBuilder withoutFor(TreeNode n1){
-        StringBuilder sb = new StringBuilder();
-        Deque<TreeNode> queue = new ArrayDeque<>();
-        List<TreeNode> children = new ArrayList<>();
-        //string const in tree
-        Map<String,String> rootToJoin = new HashMap<>();
-        children.add(n1);
-        queue.offer(n1);
-        while(!queue.isEmpty()){
-            TreeNode cur = queue.pollLast();
-            List<TreeNode> nxt = cur.children;
-            for(TreeNode n: nxt){
-                queue.offerFirst(n);
-                children.add(n);
-                if(varToStringEQ.get(n.name)!=null){
-                    rootToJoin.put(n.name,varToStringEQ.get(n.name));
-                }
-            }
-        }
-        for(TreeNode child: children){
-            sb.append("$").append(child.name).append(" in ").append(child.forXQ).append(",\n");
-        }
-        sb.deleteCharAt(sb.length()-2); //delete "," and \n
-        //add where
-        if(rootToJoin.size()!=0){
-            sb.append("where ");
-            for(Map.Entry<String,String> entry:rootToJoin.entrySet()){
-                sb.append("$").append(entry.getKey()).append(" eq ").append(entry.getValue()).append("and");
-            }
-            sb.delete(sb.length()-3,sb.length()).append("\n");
-        }
-        //add return
-        sb.append("return <tuple>{");
-        for(TreeNode child: children){
-            sb.append("<").append(child.name).append(">{$").append(child.name).append("}</").append(child.name).append(">,\n");
-        }
-        sb.deleteCharAt(sb.length()-2); //delete "," and \n
-        sb.append("}</tuple>");
-        return sb;
     }
 
     public StringBuilder flwrRes(TreeNode n1){ //n1 = root
