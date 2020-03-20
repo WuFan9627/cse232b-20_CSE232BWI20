@@ -705,8 +705,16 @@ class Visitor extends XPathBaseVisitor<Object>{
                 rAttrs.add(n.getText());
             }
 
-            //one attrs is empty
-            if (lAttrs.isEmpty() || rAttrs.isEmpty()) {
+            if (lAttrs.isEmpty() && rAttrs.isEmpty()) {
+                for (Node l : left) {
+                    for (Node r : right) {
+                        List<Node> join = new ArrayList<>();
+                        join.addAll(getChildren(l));
+                        join.addAll(getChildren(r));
+                        res.add(makeElem(l.getNodeName(), join));
+                    }
+                }
+                this.curNodes = res;
                 return res;
             }
 
