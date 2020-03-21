@@ -1,4 +1,4 @@
-# Milestone 4 demo (Under milestone4Demo directoty)
+# Milestone 4 demo 
 ## Content:
 #### XPathTest.txt: 
 It is the query that need to be rewriten. 
