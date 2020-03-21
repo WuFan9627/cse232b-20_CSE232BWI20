@@ -15,3 +15,5 @@ The final output
 
 ## How to run:
 java -jar  XPath-1.0-SNAPSHOT.jar  XPathTest.txt  -flag
+
+If the input query contains "join" or no whereclause or no joined trees then it can not be rewriten. The rewriteQUery.txt will be "rewrite failed" 
