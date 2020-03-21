@@ -85,5 +85,5 @@ cond
 	;
 
 var : '$' NAME;
-names: '[' NAME (',' NAME)* ']';
+names: '[' (NAME (',' NAME)*)* ']';
 StringConstant: '"'+[a-zA-Z0-9,.!?; '"-]+'"';

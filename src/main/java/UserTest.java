@@ -13,21 +13,20 @@ import javax.xml.transform.*;
 
 public class UserTest {
     public static void main(String[] args) throws IOException, TransformerException, ParserConfigurationException {
-//        Scanner input = new Scanner(System.in);
-//        System.out.print("Enter query file name : ");
-//        String file = input.next();
 
-//        if(args.length==0){
-//            System.out.println("Need input file and flag");
-//        }
-//        String file = args[0];
-//        String flag = args[1];
-//        Boolean f = true;
-//
-//        if(flag.equals("-L")) f = true;
-//        if(flag.equals("-B")) f = false;
-//        else System.out.println("please enter the correct flag");
-        String file = "XPathTest.txt";
+        //String file = "XPathTest.txt";
+
+        if(args.length==0){
+            System.out.println("The argument format is: java -jar <jar> <Query.txt> <flag>");
+        }
+        String file = args[0];
+        String flag = args[1];
+        Boolean f = true;
+
+        if(flag.equals("-L")) f = true;
+        else if(flag.equals("-B")) f = false;
+        else System.out.println("please enter the correct flag");
+
         InputStream in = System.in;
         InputStream in2 = System.in;
         if(file != null){
@@ -60,12 +59,16 @@ public class UserTest {
 
         //---below do the milestone3---
         reWriteVisitor rw = new reWriteVisitor();
-        String rew = rw.reWrite(in,false);//true = left, false = bushy
-        System.out.println(rew);
-        System.out.println("----------------------");
+        String rew = rw.reWrite(in,f);//true = left, false = bushy
+        PrintWriter out = new PrintWriter("rewriteQuery.txt");
+        PrintWriter result = new PrintWriter("result.txt");
 
+
+        //System.out.println(rew);
+        //System.out.println("----------------------");
+        StringBuilder sb = new StringBuilder();
         if(rew==null){
-            System.out.println("cannot do left deep join, rewrite failed");
+            out.println("rewrite failed");
             CharStream stream = CharStreams.fromStream(in2);
             XPathLexer lexer = new XPathLexer(stream);
             CommonTokenStream cts = new CommonTokenStream(lexer);
@@ -73,14 +76,16 @@ public class UserTest {
             ParseTree tree = parser.xq();
             Visitor vi = new Visitor();  //
             List<Node> list = (List<Node>) vi.visit(tree);
-            System.out.println("The size of the result is " + list.size());
+            result.println("The size of the result is " + list.size());
+            //System.out.println("The size of the result is " + list.size());
             Iterator iterator = list.iterator();
             while (iterator.hasNext()) {
                 Node node = (Node) iterator.next();
-                printNode(node, "");
+                sb.append(printNode(node, ""));
             }
         }
         else {
+            out.println(rew);
             CharStream stream = CharStreams.fromString(rew);
             XPathLexer lexer = new XPathLexer(stream);
             CommonTokenStream cts = new CommonTokenStream(lexer);
@@ -88,38 +93,48 @@ public class UserTest {
             ParseTree tree = parser.xq();
             Visitor vi = new Visitor();  //
             List<Node> list = (List<Node>) vi.visit(tree);
-            System.out.println("The size of the result is " + list.size());
+            result.println("The size of the result is " + list.size());
+            //System.out.println("The size of the result is " + list.size());
             Iterator iterator = list.iterator();
+
             while (iterator.hasNext()) {
                 Node node = (Node) iterator.next();
-                printNode(node, "");
+                sb.append(printNode(node, ""));
             }
         }
-
+        result.println(sb);
+        out.close();
+        result.close();
 
     }
-    private static void printNode(Node node, String tab) {
+    private static StringBuilder printNode(Node node, String tab) {
+        StringBuilder sb = new StringBuilder();
         if (node.getNodeType() == Node.ELEMENT_NODE) {
-            System.out.println(tab + "<" + node.getNodeName() + ">");
+            sb.append(tab).append("<").append( node.getNodeName()).append(">").append("\n");
+            //System.out.println(tab + "<" + node.getNodeName() + ">");
             NamedNodeMap nodeMap = node.getAttributes();
             if (nodeMap != null) {
                 for (int i = 0; i < nodeMap.getLength(); i++) {
-                    printNode(nodeMap.item(i), tab + "  ");
+                    sb.append(printNode(nodeMap.item(i), tab + "  ")).append("\n");
                 }
             }
             NodeList nodeList = node.getChildNodes();
             if (nodeList != null) {
                 for (int i = 0; i < nodeList.getLength(); i++) {
-                    printNode(nodeList.item(i), tab + "  ");
+                    sb.append(printNode(nodeList.item(i), tab + "  ")).append("\n");
                 }
             }
-            System.out.println(tab + "<" + node.getNodeName() + "/>");
+            //System.out.println(tab + "<" + node.getNodeName() + "/>");
+            sb.append(tab).append("<").append(node.getNodeName()).append("/>").append("\n");
 
         } else if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
-            System.out.println(tab + "<@" + node.getNodeName() + "=" + node.getNodeValue() + ">");
+            sb.append(tab).append("<@").append(node.getNodeName()).append("=").append(node.getNodeValue()).append(">").append("\n");
+            //System.out.println(tab + "<@" + node.getNodeName() + "=" + node.getNodeValue() + ">");
         } else if (node.getNodeType() == Node.TEXT_NODE) {
-            System.out.println(tab + node.getTextContent());
+            sb.append(tab).append(node.getTextContent()).append("\n");
+            //System.out.println(tab + node.getTextContent());
         }
+        return sb;
     }
 
 //    private static String toString(Node node) throws IOException, TransformerException

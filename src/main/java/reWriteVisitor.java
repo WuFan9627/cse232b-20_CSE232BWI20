@@ -248,30 +248,23 @@ class reWriteVisitor{
         }
         return w;
     }
-    TreeNode getMinHeightTree(List<List<String>> joinTreeList){
-        //get tree set
-        Set<String> treeSet = new HashSet<>();
-        for(List<String> tree: joinTreeList){
-            treeSet.add(tree.get(0));
-            treeSet.add(tree.get(1));
-        }
-        int size = treeSet.size();
+    TreeNode getMinHeightTree(List<String> setList){
+        int size = setList.size();
         TreeNode[] dp = new TreeNode[(int) Math.pow(2,size)];
         //create tree weight map
         Map<String, Integer> weights = new HashMap<>();
         int count = 0;
-        for(String s: treeSet){
+        for(String s: setList){
             weights.put(s, (int) Math.pow(2,count));
             count++;
         }
         //initialization dp array
-        for(String s: treeSet){
+        for(String s: setList){
             List<String> singleList = new ArrayList<>();
             singleList.add(s);
             int index = getIndex(singleList,weights);
             dp[index] = varToRoot.get(s);
         }
-        List<String> setList = new ArrayList<>(treeSet);
 
         for(int i = 2;i<Math.pow(2,size);i++){
             List<String> S = new ArrayList<>();
@@ -311,8 +304,14 @@ class reWriteVisitor{
                     joinedRoot.joinCon = noJoinCon(n1,n2);
                 }
                 int subsetIdx = getIndex(S,weights);
-                if(dp[subsetIdx]==null || (dp[subsetIdx].height > joinedRoot.height && dp[subsetIdx].cp >= joinedRoot.cp)){
-                        dp[subsetIdx] = joinedRoot;
+                if(dp[subsetIdx]==null ){
+                    dp[subsetIdx] = joinedRoot;
+                }
+                else if(dp[subsetIdx].cp > joinedRoot.cp){
+                    dp[subsetIdx] = joinedRoot;
+                }
+                else if(dp[subsetIdx].height > joinedRoot.height ){
+                    dp[subsetIdx] = joinedRoot;
                 }
             }
         }
@@ -421,9 +420,8 @@ class reWriteVisitor{
 //    }
 
     public StringBuilder getResultBushy(){
-
-        List<List<String>> joinTreeList = new ArrayList<>();
-        for(List<String> key : varToVarEQ.keySet()){
+        List<String> joinTreeList = new ArrayList<>();
+        for(String key : varToRoot.keySet()){
             joinTreeList.add(key);
         }
         return bushyHelper(getMinHeightTree(joinTreeList));
@@ -497,171 +495,10 @@ class reWriteVisitor{
         }
         sb.deleteCharAt(sb.length()-1);
         sb.append("] )");
-//        List<String> entry = new ArrayList<>();
-//        if(varToRoot.get(n1.name)!=null && varToRoot.get(n2.name)!=null ){
-//            int idx1 = Integer.parseInt(n1.TreeRoot);
-//            int idx2 = Integer.parseInt(n2.TreeRoot);
-//            if(idx1 < idx2){
-//                entry.add(n1.name); entry.add(n2.name);
-//            }
-//            else{
-//                entry.add(n2.name); entry.add(n1.name);
-//            }
-//            if(varToVarEQ.get(entry) != null){
-//                sb.append(appendEQ(entry,false)).append(")");
-//            }
-//            else{
-//                sb.append("[],[] ").append(")");
-//            }
-//        }
-//        else if(varToRoot.get(n1.name)!=null || varToRoot.get(n2.name)!=null ){
-//
-//        }
-
-
         return sb;
     }
 
 
-//    public StringBuilder getResultBushy(){
-//        //no join
-//        if(varToVarEQ.size()==0) return null;
-//        separate();
-//
-//        for(List<String> l : unrelated){
-//            String tree1 = l.get(0);
-//            String tree2 = l.get(1);
-//            if(tree1.equals(tree2)) continue;
-//            StringBuilder joinAll = new StringBuilder();
-//            TreeNode n1 = varToNode.get(tree1)==null? varToRoot.get(tree1) : varToNode.get(tree1);
-//            TreeNode n2 = varToNode.get(tree2)==null? varToRoot.get(tree2) : varToNode.get(tree2);
-//            StringBuilder tree1Res = flwrRes(n1);
-//            StringBuilder tree2Res = flwrRes(n2);
-//            joinAll.append("join (\n").append(tree1Res).append(", ")
-//                    .append(tree2Res).append(", ")
-//                    .append(appendEQ(l,false)).append(")");
-//            resList.put(tree1, joinAll);
-//            joinList.put(tree2, tree1);
-//        }
-//        for(List<String> l : left){
-//            String s1 = l.get(0); String s2 = l.get(1);
-//            if((resList.containsKey(s1) && joinList.containsKey(s2)) || (resList.containsKey(s2) && joinList.containsKey(s1))){
-//                Boolean rev = false;
-//                if(resList.containsKey(s2) && joinList.containsKey(s1)){
-//                    String temp = s1;s1 = s2;s2 = temp; //swap, s1 in resList, s2 in joinList
-//                    rev = true;
-//                }
-//                if(s1.equals(joinList.get(s2))){
-//                    StringBuilder sb = resList.get(s1);
-//                    sb = appendEQToRes(sb,l);
-//                    resList.put(s1, sb);
-//                }
-//                else{
-//                    StringBuilder sb = resList.get(s1);
-//                    sb.insert(0,"join (\n").append(",\n").append(resList.get(joinList.get(s2))).append(",")
-//                            .append(appendEQ(l,rev)).append(")");
-//                    String t = joinList.get(s2);
-//                    resList.put(s1, sb);
-//                    resList.remove(t);
-//                    joinList.put(joinList.get(s2),s1);
-//                    //find all joinList.get(s2) in joinList and replace them with s1
-//                    replace(t,s1);
-//                }
-//
-//            }
-//            else if((!resList.containsKey(s1) && !joinList.containsKey(s1) && resList.containsKey(s2)) ||
-//                    (!resList.containsKey(s2) && !joinList.containsKey(s2) && resList.containsKey(s1)) ){
-//                Boolean rev = false;
-//                if(!resList.containsKey(s1) && !joinList.containsKey(s1)){
-//                    String temp = s1;s1 = s2;s2 = temp; //swap, s1 in resList, s2 is empty
-//                    rev = true;
-//                }
-//                TreeNode n2 = varToNode.get(s2)==null? varToRoot.get(s2) : varToNode.get(s2);
-//                StringBuilder sb = resList.get(s1);
-//                sb.insert(0,"join (\n").append(",\n").append(flwrRes(n2)).append(",")
-//                        .append(appendEQ(l,rev)).append(")");
-//                resList.put(s1, sb);
-//                joinList.put(s2,s1);
-//
-//            }
-//            else if((!resList.containsKey(s1) && !joinList.containsKey(s1) && joinList.containsKey(s2)) ||
-//                    (!resList.containsKey(s2) && !joinList.containsKey(s2) && joinList.containsKey(s1)) ){
-//                Boolean rev = false;
-//                if(!resList.containsKey(s1) && !joinList.containsKey(s1)){
-//                    String temp = s1;s1 = s2;s2 = temp; //swap, s1 in joinList, s2 is empty
-//                    rev = true;
-//                }
-//                TreeNode n2 = varToNode.get(s2)==null? varToRoot.get(s2) : varToNode.get(s2);
-//                StringBuilder sb =resList.get(joinList.get(s1));
-//                sb.insert(0,"join (\n").append(",\n").append(flwrRes(n2)).append(",")
-//                        .append(appendEQ(l,rev)).append(")");
-//                resList.put(joinList.get(s1), sb);
-//                joinList.put(s2,joinList.get(s1));
-//
-//
-//            }
-//            else if(resList.containsKey(s1) && resList.containsKey(s2)){
-//                StringBuilder sb =resList.get(s1);
-//                sb.insert(0,"join (\n").append(",\n").append(resList.get(s2)).append(",")
-//                        .append(appendEQ(l,false)).append(")");
-//                resList.put(s1, sb);
-//                replace(s2,s1);
-//                joinList.put(s2,s1);
-//                resList.remove(s2);
-//            }
-//            else if(joinList.containsKey(s1) && joinList.containsKey(s2)){
-//                if(joinList.get(s1).equals(joinList.get(s2))){
-//                    //append eq
-//                    StringBuilder sb =resList.get(joinList.get(s1));
-//                    sb = appendEQToRes(sb,l);
-//                    resList.put(joinList.get(s1), sb);
-//                }
-//                else{
-//                    StringBuilder sb =resList.get(joinList.get(s1));
-//                    StringBuilder sb2 =resList.get(joinList.get(s2));
-//                    sb.insert(0,"join (\n").append(",\n").append(sb2).append(",")
-//                            .append(appendEQ(l,false)).append(")");
-//                    joinList.put(s2, joinList.get(s1));
-//                    resList.remove(joinList.get(s2));
-//                    resList.put(joinList.get(s1),sb);
-//                }
-//            }
-//        }
-//        if(resList.size()==1){
-//            for(Map.Entry<String, StringBuilder> entry: resList.entrySet()){
-//                StringBuilder value = entry.getValue();
-//                return value;
-//            }
-//        }else{
-//            return unionRes();
-//        }
-//        return null;
-//    }
-//    public StringBuilder unionRes(){
-//        StringBuilder sb = new StringBuilder();
-//        List<StringBuilder> list = new ArrayList<>();
-//        for(StringBuilder sbEle : resList.values()){
-//            list.add(sbEle);
-//        }
-//        for(int i = 0; i <list.size();i = i+2){
-//            if(i==0){
-//                sb.append("join (\n").append(list.get(i)).append(",\n").append(list.get(i+1)).append(",")
-//                        .append("[],[] ").append(")");
-//            }
-//            else if(i+1==list.size()){
-//                sb.append(",").append(list.get(i)).append("[],[] ").append(")");
-//                sb.insert(0,"join (\n").append("[],[] ").append(")");
-//            }
-//            else{
-//                sb.append(",").append("join (\n").append(list.get(i)).append(",\n").append(list.get(i+1)).append(",")
-//                        .append("[],[] ").append(")");
-//            }
-//        }
-//        if(list.size() %2 ==0){
-//            sb.insert(0,"join (\n").append(", [],[] ").append(")");
-//        }
-//        return sb;
-//    }
     public StringBuilder appendEQToRes(StringBuilder sb, List<String> l){
         List<List<String>> appendee = appendEQHelper(l);
         int idx = sb.toString().lastIndexOf("}</tuple>");
@@ -733,9 +570,11 @@ class reWriteVisitor{
         }
         //handel not joined flwr
         for(String t : varToRoot.keySet()){
-            if(!visited.contains(t)) return null;
+            if(!visited.contains(t)){
+                joinAll.insert(0,"join (\n").append(",").append(flwrRes(varToRoot.get(t))).append(",[],[])");
+            }
         }
-        return new StringBuilder(joinAll);
+        return joinAll;
     }
 
     public StringBuilder flwrRes(TreeNode n1){ //n1 = root

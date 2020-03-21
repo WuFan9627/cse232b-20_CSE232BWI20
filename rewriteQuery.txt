@@ -1,0 +1,19 @@
+for $tuple in join (
+join (
+for $b1 in doc("book.xml")/book,
+$aj in $b1/author/first/text(),
+$a1 in $b1/author
+where $aj eq "W."
+return <tuple>{<b1>{$b1}</b1>,
+<aj>{$aj}</aj>,
+<a1>{$a1}</a1>
+}</tuple>, for $b2 in doc("book.xml")/book,
+$a2 in $b2/author
+return <tuple>{<b2>{$b2}</b2>,
+<a2>{$a2}</a2>
+}</tuple>, [a1],[a2]),for $b3 in doc("book.xml")/book,
+$a3 in $b3/author
+return <tuple>{<b3>{$b3}</b3>,
+<a3>{$a3}</a3>
+}</tuple>,[],[])
+return<triplet>{$tuple/b1/*,$tuple/b2/*,$tuple/b3/*}</triplet>
