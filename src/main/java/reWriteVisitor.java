@@ -134,22 +134,22 @@ class reWriteVisitor{
 //      return res;
 //    }
 
-//    Set<List<List<String>>> separate(){
-//        Set<List<List<String>>> groups = new HashSet<>();
-//        Map<List<String>,List<List<String>>> unjoinedTrees = new HashMap<>(varToVarEQ);
-//        while(unjoinedTrees.size()!=0){
-//            List<List<String>> sequence = sort(unjoinedTrees);
-//            List<List<String>> g = new ArrayList<>();
-//            for(List<String> s: sequence){
-//                g.add(s);
-//            }
-//            groups.add(g);
-//            for(List<String> s: sequence) {
-//                unjoinedTrees.remove(s);
-//            }
-//        }
-//        return groups;
-//    }
+    Set<List<List<String>>> separate(){
+        Set<List<List<String>>> groups = new HashSet<>();
+        Map<List<String>,List<List<String>>> unjoinedTrees = new HashMap<>(varToVarEQ);
+        while(unjoinedTrees.size()!=0){
+            List<List<String>> sequence = sort(unjoinedTrees);
+            List<List<String>> g = new ArrayList<>();
+            for(List<String> s: sequence){
+                g.add(s);
+            }
+            groups.add(g);
+            for(List<String> s: sequence) {
+                unjoinedTrees.remove(s);
+            }
+        }
+        return groups;
+    }
     public String reWrite(InputStream in, Boolean flag) throws IOException{
         CharStream stream = CharStreams.fromStream(in);
         XPathLexer lexer = new XPathLexer(stream);
@@ -249,6 +249,10 @@ class reWriteVisitor{
         return w;
     }
     TreeNode getMinHeightTree(List<String> setList){
+//        Boolean isConnected = false;
+//        if(separate().size()==1){
+//            isConnected = true;
+//        }
         int size = setList.size();
         TreeNode[] dp = new TreeNode[(int) Math.pow(2,size)];
         //create tree weight map
@@ -265,8 +269,8 @@ class reWriteVisitor{
             int index = getIndex(singleList,weights);
             dp[index] = varToRoot.get(s);
         }
-
-        for(int i = 2;i<Math.pow(2,size);i++){
+        //List<List<String>> subSetForS = getSubsets(setList);
+        for(int i = 2;i<=Math.pow(2,size)-1;i++){
             List<String> S = new ArrayList<>();
             for(int j = 1; j <= size;j++){
                 int idx = (int) Math.floor((i/Math.pow(2,j-1)));
@@ -298,7 +302,7 @@ class reWriteVisitor{
                 joinedRoot.cp = n1.cp + n2.cp;
 
                 if(noJoinCon(n1,n2).size()==0){
-                        joinedRoot.cp++;
+                    joinedRoot.cp++;
                 }
                 else{
                     joinedRoot.joinCon = noJoinCon(n1,n2);
@@ -310,7 +314,7 @@ class reWriteVisitor{
                 else if(dp[subsetIdx].cp > joinedRoot.cp){
                     dp[subsetIdx] = joinedRoot;
                 }
-                else if(dp[subsetIdx].height > joinedRoot.height ){
+                else if(dp[subsetIdx].height > joinedRoot.height){
                     dp[subsetIdx] = joinedRoot;
                 }
             }
@@ -424,7 +428,23 @@ class reWriteVisitor{
         for(String key : varToRoot.keySet()){
             joinTreeList.add(key);
         }
-        return bushyHelper(getMinHeightTree(joinTreeList));
+        //return bushyHelper(getMinHeightTree(joinTreeList));
+        List<TreeNode> res = new ArrayList<>();
+        for(int i = 0;i<joinTreeList.size();i++){
+            List<String> temp = new ArrayList<>(joinTreeList);
+            temp.remove(i);
+            temp.add(joinTreeList.get(i));
+            res.add(getMinHeightTree(temp));
+        }
+        int maxCp = Integer.MAX_VALUE;
+        TreeNode bestNode = new TreeNode();
+        for(TreeNode n : res){
+            if(n.cp < maxCp){
+                bestNode = n;
+                maxCp = n.cp;
+            }
+        }
+        return bushyHelper(bestNode);
     }
     public StringBuilder bushyHelper(TreeNode n) {
 
